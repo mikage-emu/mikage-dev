@@ -9,6 +9,7 @@
 #include "processes/ns_hpv.hpp"
 #include "processes/sm_hpv.hpp"
 #include "processes/ro_hpv.hpp"
+#include "processes/soc_hpv.hpp"
 
 #include <memory>
 
@@ -52,6 +53,7 @@ struct State {
     HPV::SMContext sm_context;
     HPV::NSContext ns_context;
     HPV::ROContext ro_context;
+    HPV::SOCContext soc_context;
 
     template<typename T>
     HPV::RefCounted<T> FindObject(ProcessId process, Handle handle) const {
@@ -132,6 +134,8 @@ std::unordered_map<std::string_view, SessionFactoryType> service_factory_map = {
     { "APT:S"sv,    WrapSessionFactory<HPV::CreateAPTService,     &HPV::State::ns_context> },
 
     { "ldr:ro"sv,   WrapSessionFactory<HPV::CreateRoService,      &HPV::State::ro_context> },
+
+    { "soc:U"sv,    WrapSessionFactory<HPV::CreateSocService,     &HPV::State::soc_context> },
 }};
 
 HPV::RefCounted<HPV::Object> SessionFactory(HPV::State& state, HPV::RefCounted<HPV::Port> port) {

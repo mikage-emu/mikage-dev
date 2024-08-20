@@ -46,6 +46,7 @@
 #include "processes/news.hpp"
 #include "processes/pdn.hpp"
 #include "processes/ssl.hpp"
+#include "processes/soc.hpp"
 
 
 #include "platform/ns.hpp"
@@ -6293,6 +6294,7 @@ void OS::Run(std::shared_ptr<Interpreter::Setup> setup) {
         hle_titles["pxi"].create = FakeProcessFactoryFor<PXI::FakePXI>;
         hle_titles["ro"].create = FakeProcessFactoryFor<DummyProcess>;
         hle_titles["ssl"].create = FakeProcessFactoryFor<FakeSSL>;
+        hle_titles["socket"].create = FakeProcessFactoryFor<FakeSOC>;
 
         auto process = MakeFakeProcess(*setup, "FakeBootThread");
         process->AttachThread(std::make_shared<BootThread>(*process));

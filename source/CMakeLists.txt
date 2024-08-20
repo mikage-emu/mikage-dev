@@ -62,6 +62,8 @@ target_sources(mikage PRIVATE
                processes/pxi_fs_host_file.cpp
                processes/ro_hpv.cpp
                processes/sm_hpv.cpp
+               processes/soc.cpp
+               processes/soc_hpv.cpp
                processes/ssl.cpp
                ui/installer.cpp
                ui/key_database.cpp
