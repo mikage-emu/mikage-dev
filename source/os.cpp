@@ -6217,8 +6217,20 @@ void OS::Run(std::shared_ptr<Interpreter::Setup> setup) {
     Memory::WriteLegacy<uint32_t>(setup->mem, shared_memory_page + 0x28, system_tick.count() & 0xffffffff); // Update tick
     Memory::WriteLegacy<uint32_t>(setup->mem, shared_memory_page + 0x2c, system_tick.count() >> 32); // Update tick
 
+    // Wi-Fi MAC address
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x60, 0xb0);
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x60 + 1, 0xb1);
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x60 + 2, 0xb2);
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x60 + 3, 0xb3);
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x60 + 4, 0xb4);
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x60 + 5, 0xb5);
+
+    // Wi-Fi signal quality (0-3)
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x66, 3);
     // Network status: 7 == deactivated (prevents HOME Menu from calling unimplemented networking interfaces)
-    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x67, 7);
+    // 2: Internet available
+    // TODO: Should likely also set mac address (see https://github.com/citra-emu/citra/pull/3444)
+    Memory::WriteLegacy<uint8_t>(setup->mem, shared_memory_page + 0x67, 2);
 
     // 3D_SLIDERSTATE, 3D_LEDSTATE - NOTE: These are probably initialized by HID anyway.
 //    float stuff = /*0.0*/1.0; // From 0.0 (no 3D) to 1.0 (strongest 3D)
@@ -6279,7 +6291,7 @@ void OS::Run(std::shared_ptr<Interpreter::Setup> setup) {
         hle_titles["ErrDisp"].create = FakeProcessFactoryFor<FakeErrorDisp>;
         hle_titles["friends"].create = FakeProcessFactoryFor<FakeFRIEND>;
         hle_titles["gpio"].create = FakeProcessFactoryFor<FakeGPIO>;
-        hle_titles["http"].create = FakeProcessFactoryFor<FakeHTTP>;
+        // hle_titles["http"].create = FakeProcessFactoryFor<FakeHTTP>; // TODO: HLE is a silent cause of hangs here. The event given to Initialize will be signaled to sent requests...
         hle_titles["i2c"].create = FakeProcessFactoryFor<FakeI2C>;
         hle_titles["mcu"].create = FakeProcessFactoryFor<FakeMCU>;
         hle_titles["mic"].create = FakeProcessFactoryFor<FakeMIC>;

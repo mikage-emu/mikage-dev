@@ -79,7 +79,7 @@ static auto INFCommandHandler(FakeNWM& context, FakeThread& thread, Platform::IP
 
     case 0x6: // Unknown
         thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
-        thread.WriteTLS(0x84, 0xc800007f);
+        thread.WriteTLS(0x84, RESULT_OK);
         break;
 
     default:
