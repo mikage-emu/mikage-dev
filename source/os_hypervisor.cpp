@@ -2,6 +2,7 @@
 #include "os_hypervisor.hpp"
 #include "os_hypervisor_private.hpp"
 
+#include "processes/ac_hpv.hpp"
 #include "processes/am_hpv.hpp"
 #include "processes/cfg_hpv.hpp"
 #include "processes/dsp_hpv.hpp"
@@ -46,6 +47,7 @@ struct State {
     std::vector<HPV::RefCounted<HPV::Port>> ports;
 
     HPV::NullContext null_context;
+    HPV::ACContext ac_context;
     HPV::AMContext am_context;
     HPV::CFGContext cfg_context;
     HPV::DSPContext dsp_context;
@@ -114,6 +116,9 @@ HPV::RefCounted<HPV::Object> WrapSessionFactory(HPV::RefCounted<HPV::Port> port,
 using SessionFactoryType = std::add_pointer_t<HPV::RefCounted<HPV::Object>(HPV::RefCounted<HPV::Port>, HPV::State&)>;
 using namespace std::string_view_literals;
 std::unordered_map<std::string_view, SessionFactoryType> service_factory_map = {{
+    { "ac:i"sv,     WrapSessionFactory<HPV::CreateAcService,      &HPV::State::ac_context> },
+    { "ac:u"sv,     WrapSessionFactory<HPV::CreateAcService,      &HPV::State::ac_context> },
+
     { "am:app"sv,   WrapSessionFactory<HPV::CreateAmService,      &HPV::State::am_context> },
     { "am:net"sv,   WrapSessionFactory<HPV::CreateAmService,      &HPV::State::am_context> },
     { "am:sys"sv,   WrapSessionFactory<HPV::CreateAmService,      &HPV::State::am_context> },
