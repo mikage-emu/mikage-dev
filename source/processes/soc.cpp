@@ -1158,7 +1158,7 @@ static OS::ResultAnd<uint32_t, uint32_t, IPC::StaticBuffer> HandleGetAddrInfo(Fa
 
         count = infos.size();
         char* infos_ptr = reinterpret_cast<char*>(infos.data());
-        for (uint32_t i = 0; i < info_size; i++) {
+        for (uint32_t i = 0; i < std::min<uint32_t>(info_size, count * sizeof(infos[0])); i++) {
             thread.WriteMemory(info_buffer.addr + i, *(infos_ptr + i));
         }
     }
