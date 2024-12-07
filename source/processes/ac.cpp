@@ -15,8 +15,7 @@ struct FakeAC {
 
     Handle cfg_session;
 
-    IPC::StaticBuffer ipc_buffer_u;
-    IPC::StaticBuffer ipc_buffer_i;
+    IPC::StaticBuffer ipc_buffer;
 
     // // Last NetworkSetting loaded from config
     // std::vector<uint8_t> network_setting;
@@ -69,7 +68,7 @@ static auto ACUCommandHandler(FakeThread& thread, FakeAC& ac, std::string_view s
 
     switch (header.command_id) {
     case CreateDefaultConfig::id:
-        IPC::HandleIPCCommand<CreateDefaultConfig>(ACCreateDefaultConfig, thread, thread, ac, (service_name == "ac:u" ? ac.ipc_buffer_u : ac.ipc_buffer_i));
+        IPC::HandleIPCCommand<CreateDefaultConfig>(ACCreateDefaultConfig, thread, thread, ac, ac.ipc_buffer);
         break;
 
     case ConnectAsync::id:
@@ -183,26 +182,7 @@ static auto ACUCommandHandler(FakeThread& thread, FakeAC& ac, std::string_view s
     return ServiceHelper::SendReply;
 }
 
-static void ACUThread(FakeAC& context, FakeThread& thread) {
-    ServiceHelper service;
-    service.Append(ServiceUtil::SetupService(thread, "ac:u", 10));
-
-    // thread.WriteTLS(0x180, IPC::TranslationDescriptor::MakeStaticBuffer(0, 0x200).raw);
-    // thread.WriteTLS(0x184, thread.GetParentProcess().AllocateStaticBuffer(0x200));
-
-    context.ipc_buffer_u = { thread.GetParentProcess().AllocateStaticBuffer(0x200), 0x200, 1 },
-    thread.WriteTLS(0x188, IPC::TranslationDescriptor::MakeStaticBuffer(0, 0x200).raw);
-    thread.WriteTLS(0x18c, context.ipc_buffer_u.addr);
-
-    auto InvokeCommandHandler = [&](FakeThread& thread, uint32_t /*signalled_handle_index*/) {
-        Platform::IPC::CommandHeader header = { thread.ReadTLS(0x80) };
-        return ACUCommandHandler(thread, context, "ac:u", header);
-    };
-
-    service.Run(thread, std::move(InvokeCommandHandler));
-}
-
-static auto ACICommandHandler(FakeThread& thread, FakeAC& context, const IPC::CommandHeader& header) {
+auto ACICommandHandler(FakeThread& thread, FakeAC& context, const IPC::CommandHeader& header) {
     // Signature confirmed
     // First parameter is connection slot? (0-2)
     using LoadNetworkSetting = IPC::IPCCommand<0x401>::add_uint32::response;
@@ -291,20 +271,25 @@ static auto ACICommandHandler(FakeThread& thread, FakeAC& context, const IPC::Co
     return ServiceHelper::SendReply;
 }
 
-static void ACIThread(FakeAC& context, FakeThread& thread) {
+static void MainThread(FakeAC& context, FakeThread& thread) {
     ServiceHelper service;
-    service.Append(ServiceUtil::SetupService(thread, "ac:i", 10));
+    service.Append(ServiceUtil::SetupService(thread, "ac:u", 10));
+    auto aci_index = service.Append(ServiceUtil::SetupService(thread, "ac:i", 10));
 
-    context.ipc_buffer_i = { thread.GetParentProcess().AllocateStaticBuffer(0x200), 0x200, 0 },
+    context.ipc_buffer = { thread.GetParentProcess().AllocateStaticBuffer(0x200), 0x200, 0 },
     thread.WriteTLS(0x180, IPC::TranslationDescriptor::MakeStaticBuffer(0, 0x200).raw);
-    thread.WriteTLS(0x184, context.ipc_buffer_i.addr);
+    thread.WriteTLS(0x184, context.ipc_buffer.addr);
 
     thread.WriteTLS(0x188, IPC::TranslationDescriptor::MakeStaticBuffer(0, 0x200).raw);
     thread.WriteTLS(0x18c, thread.GetParentProcess().AllocateStaticBuffer(0x200));
 
-    auto InvokeCommandHandler = [&](FakeThread& thread, uint32_t /*signalled_handle_index*/) {
+    auto InvokeCommandHandler = [&](FakeThread& thread, uint32_t signalled_handle_index) {
         Platform::IPC::CommandHeader header = { thread.ReadTLS(0x80) };
-        return ACICommandHandler(thread, context, header);
+        if (signalled_handle_index == aci_index) {
+            return ACICommandHandler(thread, context, header);
+        } else {
+            return ACUCommandHandler(thread, context, "ac:u", header);
+        }
     };
 
     service.Run(thread, std::move(InvokeCommandHandler));
@@ -335,15 +320,7 @@ FakeAC::FakeAC(FakeThread& thread) {
         thread.CallSVC(&OS::OS::SVCCloseHandle, srv_session.first);
     }
 
-    {
-        auto aci_thread = std::make_shared<WrappedFakeThread>(thread.GetParentProcess(), [this](FakeThread& thread) {
-            return ACIThread(*this, thread);
-        });
-        aci_thread->name = "ACIThread";
-        thread.GetParentProcess().AttachThread(aci_thread);
-    }
-
-    ACUThread(*this, thread);
+    MainThread(*this, thread);
 }
 
 template<> std::shared_ptr<WrappedFakeProcess> CreateFakeProcessViaContext<FakeAC>(OS& os, Interpreter::Setup& setup, uint32_t pid, const std::string& name) {
