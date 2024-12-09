@@ -72,6 +72,9 @@ static auto ACUCommandHandler(FakeThread& thread, FakeAC& ac, std::string_view s
         break;
 
     case ConnectAsync::id:
+    {
+        Handle app_event = Handle {thread.ReadTLS(0x90)};
+
         thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
         thread.WriteTLS(0x84, RESULT_OK);
 
@@ -79,12 +82,25 @@ static auto ACUCommandHandler(FakeThread& thread, FakeAC& ac, std::string_view s
         connected = true;
 
         thread.CallSVC(&OS::SVCSignalEvent, ac.status_change_event);
+        thread.CallSVC(&OS::SVCSignalEvent, app_event);
 
+        break;
+    }
+
+    case 0x5: // GetConnectResult
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
         break;
 
     case CancelConnectAsync::id:
         thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
         thread.WriteTLS(0x84, RESULT_OK);
+        break;
+
+    case 0xA: // GetLastErrorCode
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 2, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0);
         break;
 
     case GetConnectStatus::id:
@@ -99,6 +115,22 @@ static auto ACUCommandHandler(FakeThread& thread, FakeAC& ac, std::string_view s
         thread.WriteTLS(0x88, 1); // wifi enabled (using the first configuration slot)
         // thread.WriteTLS(0x84, 0xe0a09d2e); // Indicate the hardware wifi switch is off
         // thread.WriteTLS(0x88, 0); // No wifi
+        break;
+
+    case 0xE: // GetCurrentAPInfo
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        break;
+
+    case 0xF: // GetConnectingInfraPriority
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 2, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0);
+        break;
+
+    case 0x13: // GetConnectingHotspotSubset
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
         break;
 
     // Connect to access point test? Seems to prepare results for command 0x16?
@@ -166,8 +198,19 @@ static auto ACUCommandHandler(FakeThread& thread, FakeAC& ac, std::string_view s
         thread.WriteTLS(0x84, RESULT_OK);
         break;
 
+    case 0x30: // RegisterDisconnectEvent
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        break;
+
     case GetStatusChangeEvent::id:
         IPC::HandleIPCCommand<GetStatusChangeEvent>(ACGetStatusChangeEvent, thread, thread, ac);
+        break;
+
+    case 0x3E: // IsConnected
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 2, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, connected);
         break;
 
     case SetClientVersion::id: // SetClientVersion
