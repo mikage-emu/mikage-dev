@@ -284,6 +284,35 @@ void FakePTM::CommandHandler(FakeThread& thread, const IPC::CommandHeader& heade
         thread.WriteTLS(0x84, RESULT_OK);
         break;
 
+    case 0x807: // GetPlayHistory
+        logger.info("{}received GetPlayHistory: Stub", ThreadPrinter{thread});
+
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 3, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        break;
+
+    case 0x808: // GetPlayHistoryStart
+    {
+        logger.info("{}received GetPlayHistoryStart: Stub", ThreadPrinter{thread});
+
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 3, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0); // No steps
+        thread.WriteTLS(0x8C, 0); // No steps
+        break;
+    }
+
+    case 0x809: // GetPlayHistoryLength
+    {
+        logger.info("{}received GetPlayHistoryLength: Stub", ThreadPrinter{thread});
+
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 3, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0); // No steps
+        thread.WriteTLS(0x8C, 0); // No steps
+        break;
+    }
+
     case 0x80a:
         logger.info("{}received ClearPlayHistory: Stub", ThreadPrinter{thread});
 
