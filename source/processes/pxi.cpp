@@ -515,12 +515,138 @@ static std::tuple<Result> PSVerifyRsaSha256(FakeThread& thread, Context& context
     return std::make_tuple(RESULT_OK);
 }
 
+static std::tuple<Result> PSEncryptDecryptAES(  FakeThread& thread, Context&, uint32_t num_bytes,
+                                                uint32_t iv0, uint32_t iv1, uint32_t iv2, uint32_t iv3,
+                                                uint32_t operation, uint32_t key_id,
+                                                const PXI::PXIBuffer& input, const PXI::PXIBuffer& output) {
+    operation &= 0xff;
+
+    thread.GetLogger()->info(   "{}received EncryptDecryptAES: num_bytes={:#x}, operation={:#x}, key_id={:#x}",
+                                ThreadPrinter{thread}, num_bytes, operation, key_id);
+
+    int key_indexes[] = {
+        0x0d
+    };
+
+    if (key_id >= std::size(key_indexes)) {
+        throw Mikage::Exceptions::NotImplemented("Unimplemented PS key index {:#x}", key_id);
+    }
+
+    if (operation != 1) {
+        throw Mikage::Exceptions::NotImplemented("Unimplemented PS AES operation {:#x}", operation);
+    }
+
+    // TODO: Endian correctness
+    std::array<uint8_t, 16> iv;
+    memcpy(iv.data(), &iv0, sizeof(iv0));
+    memcpy(iv.data() + 4, &iv1, sizeof(iv1));
+    memcpy(iv.data() + 8, &iv2, sizeof(iv2));
+    memcpy(iv.data() + 12, &iv3, sizeof(iv3));
+
+    auto& keydb = thread.GetParentProcess().interpreter_setup.keydb;
+    auto& key = keydb.aes_slots[key_indexes[key_id]].n.value();
+
+    CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption dec;
+    dec.SetKeyWithIV(key.data(), sizeof(key), iv.data());
+
+    std::vector<uint8_t> data(num_bytes);
+    for (uint32_t i = 0; i < num_bytes; ++i) {
+        data[i] = input.Read<uint8_t>(thread, i);
+    }
+    dec.ProcessData(data.data(), reinterpret_cast<const CryptoPP::byte*>(data.data()), num_bytes);
+    for (uint32_t i = 0; i < num_bytes; ++i) {
+        output.Write(thread, i, data[i]);
+    }
+
+    return std::make_tuple(RESULT_OK);
+}
+
+static std::tuple<Result> PSEncryptSignDecryptVerifyAesCcm(
+                FakeThread& thread, Context&, uint32_t indata_num_bytes,
+                uint32_t total_num_bytes, uint32_t /*num_bytes_for_mac*/,
+                uint32_t outdata_num_bytes, uint32_t num_bytes_output_mac,
+                uint32_t /*nonce0*/, uint32_t /*nonce1*/, uint32_t /*nonce2*/,
+                uint32_t operation, uint32_t key_id,
+                const PXI::PXIBuffer& input, const PXI::PXIBuffer& output) {
+    operation &= 0xff;
+
+    if (key_id != 2) {
+        throw Mikage::Exceptions::NotImplemented("Unimplemented PS key index {:#x}", key_id);
+    }
+
+    // CCM encrypt used by Mario Kart 7 with key 2 (slot 0x31)
+
+    if (operation != 4) {
+        throw Mikage::Exceptions::NotImplemented("Unimplemented PS AES operation {:#x}", operation);
+    }
+
+    if (total_num_bytes != outdata_num_bytes + num_bytes_output_mac) {
+        throw Mikage::Exceptions::NotImplemented("EncryptSignDecryptVerifyAesCcm: Unexpected total output size");
+    }
+
+    if (indata_num_bytes != outdata_num_bytes) {
+        // Not sure what should happen in this case
+        throw Mikage::Exceptions::NotImplemented("EncryptSignDecryptVerifyAesCcm: Input size doesn't match output size");
+    }
+
+    // TODO: Implement the actual cryptography. For now, we just copy the unmodified input buffer
+    for (uint32_t offset = 0; offset < indata_num_bytes; ++offset) {
+        output.Write(thread, offset, input.Read<uint8_t>(thread, offset));
+    }
+
+    return std::make_tuple(RESULT_OK);
+}
+
+static std::tuple<Result> PSGenerateRandomBytes(FakeThread& thread, Context&, uint32_t num_bytes, const PXI::PXIBuffer& buffer) {
+    thread.GetLogger()->info("{}received GenerateRandomBytes (stub)", ThreadPrinter{thread});
+
+    // Always fill the buffer with 0
+    for (uint32_t i = 0; i < num_bytes; ++i) {
+        buffer.Write<uint8_t>(thread, i, 0);
+    }
+
+    return std::make_tuple(RESULT_OK);
+}
+
 static auto PXIPSCommandHandler(FakeThread& thread, Context& context, const IPC::CommandHeader& header) try {
     namespace PXIPS = Platform::PXI::PS;
 
+    // NOTE: System versions <2.0 use slightly different command indexes
     switch (header.command_id) {
     case PXIPS::VerifyRsaSha256::id:
         IPC::HandleIPCCommand<PXIPS::VerifyRsaSha256>(PSVerifyRsaSha256, thread, thread, context);
+        break;
+
+    case PXIPS::EncryptDecryptAES::id:
+        IPC::HandleIPCCommand<PXIPS::EncryptDecryptAES>(PSEncryptDecryptAES, thread, thread, context);
+        break;
+
+    case PXIPS::EncryptSignDecryptVerifyAesCcm::id:
+        IPC::HandleIPCCommand<PXIPS::EncryptSignDecryptVerifyAesCcm>(PSEncryptSignDecryptVerifyAesCcm, thread, thread, context);
+        break;
+
+    case 0x6: // GetRomId
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 5, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0x30303030);
+        thread.WriteTLS(0x8C, 0x30303030);
+        thread.WriteTLS(0x90, 0x30303030);
+        thread.WriteTLS(0x94, 0x30303030);
+        break;
+
+    case 0x9: // GetRomMakerCode
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 2, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0);
+        break;
+
+    case 0xc: // SeedRNG
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        break;
+
+    case PXIPS::GenerateRandomBytes::id:
+        IPC::HandleIPCCommand<PXIPS::GenerateRandomBytes>(PSGenerateRandomBytes, thread, thread, context);
         break;
 
     default:
