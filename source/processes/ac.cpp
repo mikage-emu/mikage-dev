@@ -97,6 +97,22 @@ static auto ACUCommandHandler(FakeThread& thread, FakeAC& ac, std::string_view s
         thread.WriteTLS(0x84, RESULT_OK);
         break;
 
+    case 0x8: // CloseAsync
+    {
+        Handle app_event = Handle {thread.ReadTLS(0x90)};
+
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+
+        thread.CallSVC(&OS::SVCSignalEvent, app_event);
+        break;
+    }
+
+    case 0x9: // GetCloseResult
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 1, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        break;
+
     case 0xA: // GetLastErrorCode
         thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 2, 0).raw);
         thread.WriteTLS(0x84, RESULT_OK);
