@@ -1,6 +1,8 @@
 #include "fs_common.hpp"
 #include "pxi.hpp"
 #include "cryptopp/aes.h"
+#include "cryptopp/ccm.h"
+#include "cryptopp/filters.h"
 #include "cryptopp/modes.h"
 #include "os.hpp"
 
@@ -561,37 +563,96 @@ static std::tuple<Result> PSEncryptDecryptAES(  FakeThread& thread, Context&, ui
     return std::make_tuple(RESULT_OK);
 }
 
+template<bool IsEncryption>
+struct CCMFor3DS : CryptoPP::CCM_Final<CryptoPP::AES, 12, IsEncryption> {
+    void UncheckedSpecifyDataLengths(CryptoPP::lword header, CryptoPP::lword message, CryptoPP::lword footer) override {
+        auto aligned_message = ((message + 15) / 16) * 16;
+        CryptoPP::CCM_Base::UncheckedSpecifyDataLengths(header, aligned_message, footer);
+        CryptoPP::CCM_Base::m_messageLength = message;
+    }
+};
+
 static std::tuple<Result> PSEncryptSignDecryptVerifyAesCcm(
                 FakeThread& thread, Context&, uint32_t indata_num_bytes,
-                uint32_t total_num_bytes, uint32_t /*num_bytes_for_mac*/,
-                uint32_t outdata_num_bytes, uint32_t num_bytes_output_mac,
-                uint32_t /*nonce0*/, uint32_t /*nonce1*/, uint32_t /*nonce2*/,
+                uint32_t total_num_bytes, uint32_t unknown_data_num_bytes,
+                uint32_t outdata_num_bytes, uint32_t num_bytes_output_mac /* TODO: Rename to mac size */,
+                uint32_t nonce0, uint32_t nonce1, uint32_t nonce2,
                 uint32_t operation, uint32_t key_id,
                 const PXI::PXIBuffer& input, const PXI::PXIBuffer& output) {
     operation &= 0xff;
 
+    // Key ID 2 maps to AES key slot 0x31
     if (key_id != 2) {
         throw Mikage::Exceptions::NotImplemented("Unimplemented PS key index {:#x}", key_id);
     }
 
-    // CCM encrypt used by Mario Kart 7 with key 2 (slot 0x31)
+    // CCM encrypt is used by APT:Wrap to wrap Mii data (notably triggered by Mario Kart 7).
+    // Conversely, CCM decrypt is used by APT:Unwrap.
 
-    if (operation != 4) {
+    if (operation != 4 && operation != 5) {
         throw Mikage::Exceptions::NotImplemented("Unimplemented PS AES operation {:#x}", operation);
     }
 
-    if (total_num_bytes != outdata_num_bytes + num_bytes_output_mac) {
+    if (num_bytes_output_mac != 0x10) {
+        throw Mikage::Exceptions::NotImplemented("Unimplemented PS AES output MAC size {:#x}", num_bytes_output_mac);
+    }
+
+    if (total_num_bytes != outdata_num_bytes + (operation == 4 ? num_bytes_output_mac : 0)) {
         throw Mikage::Exceptions::NotImplemented("EncryptSignDecryptVerifyAesCcm: Unexpected total output size");
     }
 
-    if (indata_num_bytes != outdata_num_bytes) {
+    if (indata_num_bytes != outdata_num_bytes + (operation == 5 ? num_bytes_output_mac : 0)) {
         // Not sure what should happen in this case
         throw Mikage::Exceptions::NotImplemented("EncryptSignDecryptVerifyAesCcm: Input size doesn't match output size");
     }
 
-    // TODO: Implement the actual cryptography. For now, we just copy the unmodified input buffer
-    for (uint32_t offset = 0; offset < indata_num_bytes; ++offset) {
-        output.Write(thread, offset, input.Read<uint8_t>(thread, offset));
+    if (unknown_data_num_bytes != 0) {
+        throw Mikage::Exceptions::NotImplemented("Unhandled data block size {:#x}", unknown_data_num_bytes);
+    }
+
+    std::vector<uint8_t> data(indata_num_bytes);
+    for (uint32_t i = 0; i < indata_num_bytes; ++i) {
+        data[i] = input.Read<uint8_t>(thread, i);
+    }
+
+    std::array<uint8_t, 12> iv {};
+    memcpy(iv.data(), &nonce0, sizeof(nonce0));
+    memcpy(iv.data() + 4, &nonce1, sizeof(nonce1));
+    memcpy(iv.data() + 8, &nonce2, sizeof(nonce2));
+
+    auto& keydb = thread.GetParentProcess().interpreter_setup.keydb;
+    auto& keyslot = keydb.aes_slots[0x31];
+    std::array<uint8_t, 16> GenerateAESKey(const std::array<uint8_t, 16>& key_x, const std::array<uint8_t, 16>& key_y);
+    auto key = GenerateAESKey(keyslot.x.value(), keyslot.y.value());
+
+    std::vector<uint8_t> out(total_num_bytes);
+
+    if (operation == 4) {
+        CCMFor3DS<true> enc;
+        enc.SetKeyWithIV(key.data(), sizeof(key), iv.data(), iv.size());
+        enc.SpecifyDataLengths(0, data.size(), 0);
+
+        fmt::print("Encrypting data: {:02x}", fmt::join(data, ""));
+
+        CryptoPP::ArraySource src {
+                data.data(), data.size(), true /* pumpAll */,
+                new CryptoPP::AuthenticatedEncryptionFilter { enc, new CryptoPP::ArraySink { out.data(), out.size() } } };
+    } else {
+        CCMFor3DS<false> dec;
+        dec.SetKeyWithIV(key.data(), sizeof(key), iv.data(), iv.size());
+        dec.SpecifyDataLengths(0, out.size(), 0);
+
+        CryptoPP::AuthenticatedDecryptionFilter filter { dec, new CryptoPP::ArraySink { out.data(), out.size() } };
+        CryptoPP::ArraySource src { data.data(), data.size(), true /* pumpAll */, new CryptoPP::Redirector { filter } };
+        if (!filter.GetLastResult()) {
+            throw Mikage::Exceptions::NotImplemented("AES CCM decryption failed");
+        }
+
+        fmt::print("Decrypted data: {:02x}", fmt::join(out, ""));
+    }
+
+    for (uint32_t i = 0; i < out.size(); ++i) {
+        output.Write(thread, i, out[i]);
     }
 
     return std::make_tuple(RESULT_OK);
