@@ -9,7 +9,7 @@ class logger;
 }
 
 struct VulkanInstanceManager {
-    vk::DynamicLoader vulkan_loader;
+    vk::detail::DynamicLoader vulkan_loader;
     vk::UniqueInstance instance;
 
     VulkanInstanceManager(spdlog::logger&, const char* app_name, const std::vector<const char*>& required_instance_extensions);
