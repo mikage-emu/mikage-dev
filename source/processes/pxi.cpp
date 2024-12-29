@@ -24,6 +24,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <fmt/ostream.h>
+
 std::vector<uint64_t>* nand_titles = nullptr;
 
 namespace std {
@@ -35,6 +37,8 @@ static std::ostream& operator<<(std::ostream& os, const Platform::PXI::PM::Progr
 }
 
 } // namespace std
+
+template <> struct fmt::formatter<Platform::PXI::PM::ProgramInfo> : ostream_formatter {};
 
 namespace HLE {
 
