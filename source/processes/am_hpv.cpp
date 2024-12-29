@@ -3,6 +3,7 @@
 #include "os.hpp"
 
 #include <platform/am.hpp>
+#include <fmt/ranges.h>
 
 namespace HLE {
 

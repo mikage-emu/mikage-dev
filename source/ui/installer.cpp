@@ -17,6 +17,8 @@
 
 #include <filesystem>
 
+#include <fmt/ranges.h>
+
 namespace HLE::PXI {
 std::array<uint8_t, 16> GenerateAESKey(const std::array<uint8_t, 16>& key_x, const std::array<uint8_t, 16>& key_y);
 }

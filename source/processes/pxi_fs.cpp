@@ -25,6 +25,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <fmt/ranges.h>
+
 // Hardcoded size for PXI buffers.
 // TODO: These buffers should only be 0x1000 bytes large, but our PXI tables currently may span more than that because they map individual pages as entries
 const auto pxi_static_buffer_size = 0x2000;

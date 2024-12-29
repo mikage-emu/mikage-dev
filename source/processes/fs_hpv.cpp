@@ -17,6 +17,8 @@
 #include <codecvt>
 #include <variant>
 
+#include <fmt/ranges.h>
+
 namespace HLE {
 
 namespace OS {
