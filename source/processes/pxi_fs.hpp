@@ -4,8 +4,8 @@
 
 #include <platform/pxi.hpp>
 
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/path.hpp>
+#include <fstream>
+#include <filesystem>
 #include <boost/optional.hpp>
 
 namespace HLE {
@@ -133,8 +133,8 @@ public:
     };
 
 private:
-    const boost::filesystem::path path;
-    boost::filesystem::fstream stream;
+    const std::filesystem::path path;
+    std::fstream stream;
 
     Policy policy;
 
