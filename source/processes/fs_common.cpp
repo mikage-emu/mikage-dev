@@ -8,6 +8,8 @@
 
 #include <codecvt>
 
+#include <fmt/std.h>
+
 namespace HLE {
 
 CommonPath CommonPath::FromUtf16(std::u16string_view utf16_data) {

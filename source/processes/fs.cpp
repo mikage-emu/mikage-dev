@@ -35,6 +35,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <fmt/std.h>
+
 using namespace Platform::FS;
 
 namespace HLE {
