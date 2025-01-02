@@ -35,6 +35,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <fmt/std.h>
+
 using namespace Platform::FS;
 
 namespace HLE {
@@ -1818,7 +1820,7 @@ static decltype(HLE::OS::ServiceHelper::SendReply) OnFileIPCRequest(FakeThread& 
     return HLE::OS::ServiceHelper::SendReply;
 } catch (std::ios_base::failure& err) {
     thread.GetLogger()->error("Unexpected fstream exception in File IPC command {:#x} handled via object {}: {}",
-                              header.command_id, boost::core::demangle(typeid(*file).name()),
+                              header.command_id.Value(), boost::core::demangle(typeid(*file).name()),
                               IosExceptionInfo(err));
     throw;
 }
@@ -1860,7 +1862,7 @@ static decltype(HLE::OS::ServiceHelper::SendReply) OnDirIPCRequest(FakeThread& t
     return HLE::OS::ServiceHelper::SendReply;
 } catch (std::ios_base::failure& err) {
     thread.GetLogger()->error("Unexpected fstream exception in Directory IPC command {:#x} handled via object {}: {}",
-                              header.command_id, boost::core::demangle(typeid(dir).name()),
+                              header.command_id.Value(), boost::core::demangle(typeid(dir).name()),
                               IosExceptionInfo(err));
     throw;
 }

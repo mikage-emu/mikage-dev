@@ -2044,5 +2044,11 @@ std::ostream& operator<<(std::ostream& os, const HandlePrinter& printer);
 
 }  // namespace HLE
 
+template <> struct fmt::formatter<HLE::OS::ProcessPrinter> : ostream_formatter {};
+template <> struct fmt::formatter<HLE::OS::ThreadPrinter> : ostream_formatter {};
+template <> struct fmt::formatter<HLE::OS::ObjectRefPrinter> : ostream_formatter {};
+template <> struct fmt::formatter<HLE::OS::ObjectPrinter> : ostream_formatter {};
+template <> struct fmt::formatter<HLE::OS::HandlePrinter> : ostream_formatter {};
+
 // Now that we're done with the definitions, include some definitions that are required to instantiate the above structs (e.g. due to unique_ptr being used on incomplete types)
 #include "gdb_stub.h"

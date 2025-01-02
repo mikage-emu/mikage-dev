@@ -36,7 +36,7 @@ enum class GenericImageFormat {
 
 template<> struct fmt::formatter<GenericImageFormat> : fmt::formatter<std::string_view> {
     template<typename FormatContext>
-    auto format(GenericImageFormat format, FormatContext& ctx) -> decltype(ctx.out()) {
+    auto format(GenericImageFormat format, FormatContext& ctx) const -> decltype(ctx.out()) {
         std::string_view name = std::invoke([format]() -> std::string_view {
             switch (format) {
             case GenericImageFormat::RGBA8:    return "RGBA8";

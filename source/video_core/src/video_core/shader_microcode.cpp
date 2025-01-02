@@ -1554,7 +1554,7 @@ std::unique_ptr<ShaderEngine> CreateMicroCodeRecompiler(Context& context) try {
     auto vis = VisualizeShaderControlFlowGraph(prog, context.shader_memory.data(), context.shader_memory.size(),
                                 context.swizzle_data.data(), context.swizzle_data.size());
 //    std::cerr << vis << "\n";
-    throw std::runtime_error(fmt::format("OMG: {:#x}", context.registers.vs_main_offset));
+    throw std::runtime_error(fmt::format("OMG: {:#x}", context.registers.vs_main_offset.Value()));
 }
 
 } // namespace Pica::VertexShader
