@@ -72,7 +72,11 @@ find_package(Catch2 REQUIRED)
 
 find_package(Tracy REQUIRED)
 
-find_package(xxHash REQUIRED)
+find_package(xxHash)
+if (NOT xxHash_FOUND)
+    pkg_search_module(xxHash REQUIRED IMPORTED_TARGET xxHash libxxhash)
+    add_library(xxHash::xxhash ALIAS PkgConfig::xxHash)
+endif()
 
 find_package(Vulkan REQUIRED)
 
