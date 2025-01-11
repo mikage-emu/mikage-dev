@@ -800,8 +800,9 @@ std::optional<std::string> GDBStub::HandlePacket(const std::string& command) {
 
             auto emu_process = std::dynamic_pointer_cast<HLE::OS::EmuProcess>(process);
             if (!emu_process) {
+                auto process_printer = HLE::OS::ProcessPrinter { *process.get() };
                 logger->warn("Debugger attempting to attach to non-emulated process {} ({})",
-                             pid_opt->first, process);
+                             pid_opt->first, process_printer);
                 return "E02";
             }
 

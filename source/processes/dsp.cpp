@@ -785,7 +785,7 @@ void FakeDSP::OnIPCRequest(FakeThread& thread, Handle sender, const IPC::Command
 
     default:
         // TODO: Throw and catch IPCError instead
-        throw std::runtime_error(fmt::format("Unknown DSP IPC request {:#x}", header.command_id));
+        throw std::runtime_error(fmt::format("Unknown DSP IPC request {:#x}", header.command_id.Value()));
     }
 }
 
