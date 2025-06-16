@@ -1406,7 +1406,7 @@ void MemoryManager::TransferOwnership(  std::shared_ptr<MemoryBlockOwner> old_ow
         const uint32_t chunk_addr = block_it->first;
         const uint32_t chunk_size = block_it->second.size_bytes;
 
-        fmt::print("Chunk: {:#x}-{:#x} (owner {})\n", chunk_addr, chunk_addr + chunk_size, fmt::ptr(block_it->second.owner.lock()));
+        fmt::print("Chunk: {:#x}-{:#x} (owner {})\n", chunk_addr, chunk_addr + chunk_size, fmt::ptr(block_it->second.owner.lock().get()));
 
         ValidateContract(!block_it->second.owner.expired());
 
@@ -3494,7 +3494,7 @@ void OS::TranslateIPCMessage(Thread& source, Thread& dest, bool is_reply) {
             }
 
             source.GetLogger()->info("{}Copying {}/{} bytes of static buffer data from {:#010x} to {:#010x} in thread {}:",
-                                     ThreadPrinter{source}, descriptor.static_buffer.size, dest_buffer_size, source_data_addr,
+                                     ThreadPrinter{source}, descriptor.static_buffer.size.Value(), dest_buffer_size, source_data_addr,
                                      dest_buffer_addr, ThreadPrinter{dest});
             std::string data;
             auto max_size = std::min<uint32_t>(64, descriptor.static_buffer.size);
@@ -3544,7 +3544,7 @@ void OS::TranslateIPCMessage(Thread& source, Thread& dest, bool is_reply) {
 
             uint32_t static_buffer_offset = 0;
             source.GetLogger()->info("{}Setting up PXI buffer table {:#x} at address {:#x} in target process",
-                                     ThreadPrinter{source}, descriptor.pxi_buffer.id, dest_buffer_addr);
+                                     ThreadPrinter{source}, descriptor.pxi_buffer.id.Value(), dest_buffer_addr);
 
             auto base_physical_chunk = ResolveVirtualAddrWithSize(source.GetParentProcess(), buffer_address);
             if (!base_physical_chunk) {
@@ -3581,7 +3581,7 @@ void OS::TranslateIPCMessage(Thread& source, Thread& dest, bool is_reply) {
                 dest.WriteMemory32(dest_buffer_addr + static_buffer_offset + 4, buffer_size);
 
                 source.GetLogger()->info("Added PXI physical memory chunk {:#x} of size {:#x} in static buffer {} at {:#x}",
-                                        base_physical_chunk->first, buffer_size, descriptor.pxi_buffer.id, dest_buffer_addr + static_buffer_offset);
+                                        base_physical_chunk->first, buffer_size, descriptor.pxi_buffer.id.Value(), dest_buffer_addr + static_buffer_offset);
 
                 static_buffer_offset += 8;
 
@@ -3613,7 +3613,7 @@ void OS::TranslateIPCMessage(Thread& source, Thread& dest, bool is_reply) {
                     dest.WriteMemory32(dest_buffer_addr + static_buffer_offset + 4, chunk_size);
 
                     source.GetLogger()->info("Added PXI physical memory chunk {:#x} of size {:#x} in static buffer {} at {:#x}",
-                                            physical_chunk_address, chunk_size, descriptor.pxi_buffer.id, dest_buffer_addr + static_buffer_offset);
+                                            physical_chunk_address, chunk_size, descriptor.pxi_buffer.id.Value(), dest_buffer_addr + static_buffer_offset);
 
                     static_buffer_offset += 8;
 

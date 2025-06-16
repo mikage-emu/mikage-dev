@@ -8,7 +8,7 @@ class MikageConan(ConanFile):
     requires = [
         #"boost/1.79.0",
         "boost/1.84.0",
-        "spdlog/1.10.0",
+        "spdlog/1.15.3",
         "cryptopp/8.5.0",
         "sdl/2.30.7", # 2.0.18 fixed swapped X/Y buttons on Switch Pro Controller
         "range-v3/0.12.0",
@@ -17,7 +17,7 @@ class MikageConan(ConanFile):
         "spirv-tools/1.3.268.0",
         "tracy/0.11.1",
         "xxhash/0.8.0",
-        "fmt/8.1.1",
+        "fmt/11.2.0",
     ]
 
     options = {
@@ -45,9 +45,9 @@ class MikageConan(ConanFile):
             self.options["libxml2"].zlib = False
 
     def requirements(self):
-        # Pistache does not build on clang
-        if self.settings.os == "Linux" and self.settings.compiler != "clang":
-            self.requires("pistache/cci.20201127")
+        # Conan does not support building Pistache on Windows and Android
+        if self.settings.os != "Windows" and self.settings.os != "Android":
+            self.requires("pistache/0.4.25")
 
         if self.settings.os == "Linux":
             self.requires("libunwind/1.8.0")

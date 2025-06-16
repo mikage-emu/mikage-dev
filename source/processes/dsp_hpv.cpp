@@ -7,6 +7,7 @@
 
 #include <framework/exceptions.hpp>
 
+#include <fmt/ranges.h>
 
 namespace HLE {
 

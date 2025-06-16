@@ -9,7 +9,11 @@ class logger;
 }
 
 struct VulkanInstanceManager {
+#if VK_HEADER_VERSION >= 301
+    vk::detail::DynamicLoader vulkan_loader;
+#else
     vk::DynamicLoader vulkan_loader;
+#endif
     vk::UniqueInstance instance;
 
     VulkanInstanceManager(spdlog::logger&, const char* app_name, const std::vector<const char*>& required_instance_extensions);

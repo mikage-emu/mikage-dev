@@ -132,7 +132,7 @@ ValidatedHostPath PathValidator::ValidateAndGetSandboxedTreePath(const Utf8PathT
     new_path = new_path.lexically_normal();
     auto new_path_str = new_path.string();
     if (ranges::begin(new_path_str) != ranges::search(new_path_str, sandbox_root.string()).begin()) {
-        throw std::runtime_error(fmt::format("Requested path leaked out of sandbox: Got path {}, expected a child of {}", new_path, sandbox_root));
+        throw std::runtime_error(fmt::format("Requested path leaked out of sandbox: Got path {}, expected a child of {}", new_path.string(), sandbox_root.string()));
     }
     return ValidatedHostPath { std::move(new_path) };
 }

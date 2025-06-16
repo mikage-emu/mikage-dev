@@ -573,25 +573,25 @@ static void ProcessTriangleInternal(Context& context,
                         return { values.a(), values.a(), values.a() };
 
                     case ColorModifier::OneMinusSourceAlpha:
-                        return { 255 - values.a(), 255 - values.a(), 255 - values.a() };
+                        return { (uint8_t)(255 - values.a()), (uint8_t)(255 - values.a()), (uint8_t)(255 - values.a()) };
 
                     case ColorModifier::SourceRed:
                         return { values.r(), values.r(), values.r() };
 
                     case ColorModifier::OneMinusSourceRed:
-                        return { 255 - values.r(), 255 - values.r(), 255 - values.r() };
+                        return { (uint8_t)(255 - values.r()), (uint8_t)(255 - values.r()), (uint8_t)(255 - values.r()) };
 
                     case ColorModifier::SourceGreen:
                         return { values.g(), values.g(), values.g() };
 
                     case ColorModifier::OneMinusSourceGreen:
-                        return { 255 - values.g(), 255 - values.g(), 255 - values.g() };
+                        return { (uint8_t)(255 - values.g()), (uint8_t)(255 - values.g()), (uint8_t)(255 - values.g()) };
 
                     case ColorModifier::SourceBlue:
                         return { values.b(), values.b(), values.b() };
 
                     case ColorModifier::OneMinusSourceBlue:
-                        return { 255 - values.b(), 255 - values.b(), 255 - values.b() };
+                        return { (uint8_t)(255 - values.b()), (uint8_t)(255 - values.b()), (uint8_t)(255 - values.b()) };
 
                     default:
                         throw std::runtime_error(fmt::format("Unknown color factor {:#x}", static_cast<uint32_t>(factor)));

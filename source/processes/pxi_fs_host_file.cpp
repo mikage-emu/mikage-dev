@@ -23,7 +23,7 @@ HostFile::HostFile(std::string_view path, Policy policy) : path(std::begin(path)
 }
 
 ResultAnd<> HostFile::Open(FileContext& context, OpenFlags flags) {
-    context.logger.info("Attempting to open {} (create={})", path, flags.create);
+    context.logger.info("Attempting to open {} (create={})", path.string(), flags.create);
 
     if (!flags.create && !boost::filesystem::exists(path)) {
         return std::make_tuple(-1);
@@ -46,7 +46,7 @@ ResultAnd<> HostFile::Open(FileContext& context, OpenFlags flags) {
         if (!stream.is_open())
             stream.open(path, stream_flags);
     } catch (...) {
-        throw std::runtime_error(fmt::format("Failed to open {}, err: {}", path, strerror(errno)));
+        throw std::runtime_error(fmt::format("Failed to open {}, err: {}", path.string(), strerror(errno)));
     }
     return std::make_tuple(OS::RESULT_OK);
 }
@@ -56,7 +56,7 @@ void HostFile::Close(/*FakeThread& thread*/) {
 }
 
 ResultAnd<uint64_t> HostFile::GetSize(FileContext& context) {
-    context.logger.info("Attempting to get size of file {}", path);
+    context.logger.info("Attempting to get size of file {}", path.string());
 
     uint64_t size = boost::filesystem::file_size(path);
 
@@ -64,7 +64,7 @@ ResultAnd<uint64_t> HostFile::GetSize(FileContext& context) {
 }
 
 ResultAnd<> HostFile::SetSize(FakeThread& thread, uint64_t size) {
-    thread.GetLogger()->info("Attempting to set size of file {} to {:#x}", path, size);
+    thread.GetLogger()->info("Attempting to set size of file {} to {:#x}", path.string(), size);
 
     // TODO: Does this zero-fill the file as expected?
     // TODO: Expected by whom? If these are not the 3DS semantics, we still would want to have deterministic buffer contents here!
