@@ -1,5 +1,7 @@
 #include "simple_tcp.hpp"
 
+#include <winsock2.h>
+#include <mswsock.h> // For AcceptEx and GetAcceptExSockaddrs
 #include <boost/asio.hpp>
 
 void SimpleTCPServer::SetupAsyncAccept() {

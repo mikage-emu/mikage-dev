@@ -1,4 +1,6 @@
 #pragma once
+#include <winsock2.h>
+#include <mswsock.h> // For AcceptEx and GetAcceptExSockaddrs
 
 #include <boost/asio/ip/tcp.hpp>
 
