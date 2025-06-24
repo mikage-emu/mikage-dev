@@ -8,6 +8,7 @@
 #include <boost/core/demangle.hpp>
 
 #include <filesystem>
+#include <string>
 
 namespace Mikage::Exceptions {
 
@@ -37,7 +38,7 @@ std::string generate_backtrace() {
 
 std::string ContractViolated::FormatMessage(std::string_view condition, std::string_view function, std::string_view file, int line) {
     return fmt::format( "Failed assertion '{}' in {} ({}:{})\n",
-                        condition, function, std::filesystem::path(file).filename().c_str(), line);
+                        condition, function, std::filesystem::path(file).filename().string(), line);
 }
 
 } // namespace Mikage::Exceptions
