@@ -41,7 +41,7 @@ public:
 //    virtual void Read(char* dest, uint32_t num_bytes) = 0;
 
     /// Write the specified number of bytes from the source to the internal buffer
-    virtual void Write(char* source, uint32_t num_bytes) = 0;
+    virtual void Write(const char* source, uint32_t num_bytes) = 0;
 };
 
 class File {

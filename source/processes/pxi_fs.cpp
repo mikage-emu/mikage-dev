@@ -220,7 +220,7 @@ std::string PrintEntirePXIBuffer(Thread& thread, const PXIBuffer& buf, size_t si
 }
 
 
-void FileBufferInHostMemory::Write(char* source, uint32_t num_bytes) {
+void FileBufferInHostMemory::Write(const char* source, uint32_t num_bytes) {
     if (num_bytes > size) {
         throw std::runtime_error("Writing out of FileBuffer bounds");
     }
@@ -309,7 +309,7 @@ public:
 
     }
 
-    void Write(char* source, uint32_t num_bytes) override {
+    void Write(const char* source, uint32_t num_bytes) override {
         // TODO: Use a CryptoPP pipeline instead to avoid the heap allocation?
         std::vector<CryptoPP::byte> data(num_bytes);
         dec.ProcessData(data.data(), reinterpret_cast<const CryptoPP::byte*>(source), num_bytes);

@@ -63,7 +63,7 @@ public:
     FakeThread& thread;
     uint32_t address;
 
-    void Write(char* source, uint32_t num_bytes) override {
+    void Write(const char* source, uint32_t num_bytes) override {
         auto WriteToAddr = [this](auto&& addr, auto&& value) { thread.WriteMemory(addr, value); return addr + 1; };
         ranges::v3::accumulate(source, source + num_bytes, address, WriteToAddr);
     }

@@ -16,7 +16,7 @@ public:
     FileBufferInEmulatedMemory(OS::FakeThread& thread, const PXIBuffer& buffer) : thread(thread), buffer(buffer) {
     }
 
-    void Write(char* source, uint32_t num_bytes) override {
+    void Write(const char* source, uint32_t num_bytes) override {
         for (uint32_t buffer_offset = 0; buffer_offset < num_bytes; ++buffer_offset) {
             buffer.Write<uint8_t>(thread, buffer_offset, source[buffer_offset]);
         }
