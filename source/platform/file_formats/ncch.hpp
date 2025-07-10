@@ -38,7 +38,37 @@ using MediaUnit32 = MediaUnit<uint32_t>;
 
 using Bytes32 = uint32_t;
 
+
 struct NCCHHeader {
+    struct TypeFlags {
+        enum ContentType {
+            Unspecified          = 0,
+            SystemUpdate         = 1,
+            InstructionManual    = 2,
+            DLPChild             = 3,
+            Trial                = 4,
+            ExtendedSystemUpdate = 5,
+        };
+        
+        enum FormType {
+            NotAssigned            = 0,
+            SimpleContent          = 1,
+            ExecutableWithoutRomFS = 2,
+            Executable             = 3,
+        };
+        
+        BOOST_HANA_DEFINE_STRUCT(TypeFlags,
+            (uint8_t, raw)
+        );
+        
+        constexpr auto form_type() { return BitField::v3::MakeFieldOn<0, 2>(this); }
+        constexpr auto content_type() { return BitField::v3::MakeFieldOn<2, 6>(this); }
+        
+        static TypeFlags Make() {
+            return TypeFlags{};
+        }
+    };
+    
     BOOST_HANA_DEFINE_STRUCT(NCCHHeader,
         (std::array<uint8_t, 0x100>, signature), // RSA-2048 signature
         (std::array<uint8_t, 4>, magic),         // always "NCCH"
@@ -70,7 +100,8 @@ struct NCCHHeader {
         // 1 = Old3DS, 2 = New3DS
         (uint8_t, platform),
 
-        // 1 = data, 2 = executable, 4 = system update, 8 = manual, 0x10 = trial
+        // Content Type: 0 = Unspecified, 1 = System Update, 2 = Instruction Manual, 3 = Download Play Child, 4 = Trial (Demo), 5 = Extended System Update
+        // Form Type: 0 = Not Assigned, 1 = Simple Content, 2 = Executable without RomFS, 3 = Executable
         (uint8_t, type_mask),
 
         // logarithmic unit size in MediaUnits: unit_size_bytes = 0x200 * 2^unit_size_log2
