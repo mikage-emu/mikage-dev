@@ -6,6 +6,7 @@
 #include "cia.hpp"
 #include "dsp1.hpp"
 #include "ncch.hpp"
+#include "smdh.hpp"
 
 namespace FileFormat {
 
@@ -42,6 +43,10 @@ template struct SerializationInterface<DSPFirmwareHeader>;
 template struct SerializationInterface<ExeFSHeader>;
 template struct SerializationInterface<ExHeader>;
 template struct SerializationInterface<NCCHHeader>;
+
+// SMDH structures
+
+template struct SerializationInterface<SMDH>;
 
 template<>
 uint32_t SerializationInterface<uint32_t>::Load(std::function<void(char*, size_t)> reader) {
