@@ -1,4 +1,5 @@
 #include "ns_hpv.hpp"
+#include "loader/gamecard.hpp"
 #include "os_hypervisor_private.hpp"
 #include "os.hpp"
 
@@ -207,6 +208,22 @@ struct NsService : SessionToPort {
         dispatcher.DecodeRequest<NS::LaunchTitle>([&](auto&, uint64_t title_id, uint32_t flags) {
             auto description = fmt::format( "LaunchTitle, title_id={:#x}, flags={:#x}", title_id, flags);
             Session::OnRequest(hypervisor, thread, session, description);
+        });
+        
+        dispatcher.DecodeRequest<NS::CardUpdateInitialize>([&](auto& response, uint32_t shared_mem_size, Handle /* shared_mem */) {
+            auto description = fmt::format( "CardUpdateInitialize, shared_mem_size={:#x}", shared_mem_size);
+            Session::OnRequest(hypervisor, thread, session, description);
+            
+            // Disable card update process for 3DSX/CXI -> Gamecard adaptors
+            auto gamecard = thread.GetOS().setup.gamecard.get();
+            if (gamecard && (dynamic_cast<Loader::GameCardFrom3DSX*>(gamecard) != nullptr || dynamic_cast<Loader::GameCardFromCXI*>(gamecard) != nullptr)) {
+                thread.WriteTLS(0x80, 0xFFFE0000); // make NS think a bogus command is sent
+                
+                response.OnResponse([=](Hypervisor& hv, Thread& thread, Result result) {
+                    thread.WriteTLS(0x80, NS::CardUpdateInitialize::response_header);
+                    thread.WriteTLS(0x84, 0xc821180b); // "No card update required"
+                });
+            }
         });
     }
 };

@@ -70,6 +70,9 @@ namespace IPC = Platform::IPC;
 
 using LaunchTitle = IPC::IPCCommand<0x2>::add_uint64::add_uint32
                        ::response::add_uint32;
+                       
+using CardUpdateInitialize = IPC::IPCCommand<0x7>::add_uint32::add_handle<IPC::HandleType::SharedMemoryBlock>
+                                ::response;
 
 } // namespace NS
 
