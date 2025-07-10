@@ -457,8 +457,8 @@ std::cerr << "level3 offset: 0x" << std::hex << level3_offset << std::endl;*/
     }
 
     // Open the ExeFS section specified by the remainder of the file path
-    case 1:
-    case 2:
+    case 1: // exefs:/.code
+    case 2: // HOME Menu data (exefs:/{icon, banner, logo})
     {
         // Titles built for firmware 5.0.0 or newer don't store the logo in the
         // ExeFS but instead in the plaintext NCCH region.

@@ -19,11 +19,11 @@ std::unique_ptr<Loader::GameCard> LoadGameCard(spdlog::logger& logger, Settings:
     // TODO: Move gamecard initialization below setup so that we can gracefully display gamecard loading errors
     logger.info("Loading gamecard image");
     auto gamecard = Meta::invoke([&]() {
-        auto&& visitor = [](auto&& val) -> std::unique_ptr<Loader::GameCard> {
+        auto&& visitor = [&](auto&& val) -> std::unique_ptr<Loader::GameCard> {
             if constexpr (std::is_same_v<std::decay_t<decltype(val)>, Settings::InitialApplicationTag::HostFile>) {
                 try {
                     if (Loader::GameCardFrom3DSX::IsLoadableFile(val.filename))
-                        return std::unique_ptr<Loader::GameCard> { new Loader::GameCardFrom3DSX(val.filename) };
+                        return std::unique_ptr<Loader::GameCard> { new Loader::GameCardFrom3DSX(val.filename, settings) };
                     else if (Loader::GameCardFromCXI::IsLoadableFile(val.filename))
                         return std::unique_ptr<Loader::GameCard> { new Loader::GameCardFromCXI(val.filename) };
                     else if (Loader::GameCardFromCCI::IsLoadableFile(val.filename))
@@ -33,7 +33,7 @@ std::unique_ptr<Loader::GameCard> LoadGameCard(spdlog::logger& logger, Settings:
                 }
             } else if constexpr (std::is_same_v<std::decay_t<decltype(val)>, Settings::InitialApplicationTag::FileDescriptor>) {
                 if (Loader::GameCardFrom3DSX::IsLoadableFile(val.fd))
-                    return std::unique_ptr<Loader::GameCard> { new Loader::GameCardFrom3DSX(val.fd) };
+                    return std::unique_ptr<Loader::GameCard> { new Loader::GameCardFrom3DSX(val.fd, settings) };
                 else if (Loader::GameCardFromCXI::IsLoadableFile(val.fd))
                     return std::unique_ptr<Loader::GameCard> { new Loader::GameCardFromCXI(val.fd) };
                 else if (Loader::GameCardFromCCI::IsLoadableFile(val.fd))
@@ -45,19 +45,6 @@ std::unique_ptr<Loader::GameCard> LoadGameCard(spdlog::logger& logger, Settings:
         };
         return std::visit(visitor, settings.get<Settings::InitialApplicationTag>());
     });
-
-    if (settings.get<Settings::BootToHomeMenu>() && gamecard) {
-        try {
-            // Attempt to open update partition required to boot gamecards from Home Menu.
-            // If this throws, the partition does not exist (i.e. this is not a CCI file).
-            // TODO: For CXI files, provide a dummy update partition
-            gamecard->GetPartitionFromId(Loader::NCSDPartitionId::UpdateData);
-        } catch (...) {
-            logger.error("Can't use non-CCI/3DS file when booting home menu. Either redump as CCI or launch this title directly\n");
-            // TODO: Throw exception instead
-            std::exit(1);
-        }
-    }
 
     return gamecard;
 }

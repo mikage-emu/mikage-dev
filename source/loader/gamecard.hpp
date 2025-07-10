@@ -1,5 +1,7 @@
 #pragma once
 
+#include "framework/settings.hpp"
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -74,14 +76,15 @@ public:
  * Utility to wrap a 3DSX file into a single-partition GameCard.
  */
 class GameCardFrom3DSX final : public GameCard {
+    Settings::Settings& settings;
     std::optional<std::unique_ptr<HLE::PXI::FS::File>> GetPartitionFromId(NCSDPartitionId id) override;
 
     // Filename or file descriptor
     std::variant<std::string, int> source;
 
 public:
-    GameCardFrom3DSX(std::string_view filename);
-    GameCardFrom3DSX(int file_descriptor);
+    GameCardFrom3DSX(std::string_view filename, Settings::Settings& settings);
+    GameCardFrom3DSX(int file_descriptor, Settings::Settings& settings);
 
     static bool IsLoadableFile(std::string_view filename);
     static bool IsLoadableFile(int file_descriptor);
