@@ -1,5 +1,6 @@
 #include "audio_frontend_sdl.hpp"
 
+#include <filesystem>
 #include <ui/key_database.hpp>
 
 #include "platform/file_formats/cia.hpp"
@@ -323,6 +324,39 @@ if (bootstrap_nand) // Experimental system bootstrapper
                 hwcal0.write(zero, sizeof(zero));
             }
             hwcal0.write(zero, size % sizeof(zero));
+        }
+        
+        // Dump "logo" to have one for the 3DSX -> Gamecard adaptor
+        char copybuf[1024]{};
+        {
+            auto cxi_partition = gamecard->GetPartitionFromId(Loader::NCSDPartitionId::Executable);
+            auto [cxi_open_res] = (*cxi_partition)->OpenReadOnly(file_context);
+            
+            if (cxi_open_res != HLE::OS::RESULT_OK) {
+                throw std::runtime_error("Could not open executable partition of gamecard image");
+            }
+            
+            static constexpr const std::array<uint8_t, 8> logo_section_name = { 'l', 'o', 'g', 'o' };
+            auto logo_section = HLE::PXI::FS::NCCHOpenExeFSSection(*frontend_logger, file_context, keydb, std::move(*cxi_partition), 2, std::basic_string_view<uint8_t>(logo_section_name.data(), logo_section_name.size()));
+            
+            std::ofstream logo_file(settings.get<Settings::PathDataDir>() + "/logolz.bin", std::ios::binary);
+            
+            auto [res, remaining] = logo_section->GetSize(file_context);
+            if (res != HLE::OS::RESULT_OK || !remaining) {
+                throw std::runtime_error("Could not get size of logo section in gamecart executable partition");
+            }
+            uint64_t offset = 0;
+            
+            while (remaining != 0) {
+                auto readsize = std::min(sizeof(copybuf), remaining);
+                auto [res, num_bytes] = logo_section->Read(file_context, offset, readsize, HLE::PXI::FS::FileBufferInHostMemory(copybuf, sizeof(copybuf)));
+                if (res != HLE::OS::RESULT_OK || num_bytes != readsize) {
+                    throw std::runtime_error("Could not read logo section in gamecart executable partition");
+                }
+                logo_file.write(copybuf, num_bytes);
+                remaining -= num_bytes;
+                offset += num_bytes;
+            }
         }
 
         // Set up dummy rw/sys/SecureInfo_A with region EU
