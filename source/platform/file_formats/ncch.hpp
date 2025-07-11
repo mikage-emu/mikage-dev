@@ -497,6 +497,37 @@ struct NCSDHeader {
             (MediaUnit32, size)
         );
     };
+    
+    struct CartHeader {
+        BOOST_HANA_DEFINE_STRUCT(CartHeader,
+            (std::array<uint8_t, 32>, exheader_sha256),
+            (uint32_t, additional_header_size),
+            (uint32_t, sector0_offset),
+            (uint64_t, partition_flags),
+            (std::array<uint64_t, 8>, partition_id_table),
+            (std::array<uint8_t, 0x30>, unknown)
+        );
+        
+        struct Tags : expected_size_tag<0xA0> {};
+    };
+    
+    struct NANDHeader {
+        BOOST_HANA_DEFINE_STRUCT(NANDHeader,
+            (std::array<uint8_t, 0x5E>, unknown),
+            (std::array<uint8_t, 0x42>, encrypted_twl_mbr)
+        );
+        
+        struct Tags : expected_size_tag<0xA0> {};
+    };
+    
+    union NCSDExtendedHeader {
+        BOOST_HANA_DEFINE_STRUCT(NCSDExtendedHeader,
+            (CartHeader, cart_header),
+            (NANDHeader, nand_header)
+        );
+        
+        struct Tags : expected_size_tag<0xA0> {};
+    };
 
     BOOST_HANA_DEFINE_STRUCT(NCSDHeader,
         (std::array<uint8_t, 0x100>, signature), // RSA-2048 SHA-256 signature of this header (starting from magic?)
@@ -504,7 +535,7 @@ struct NCSDHeader {
         (MediaUnit32, size),                     // total NCSD size
         (std::array<uint8_t, 0x18>, unknown),
         (std::array<Partition, 8>, partition_table),
-        (std::array<uint8_t, 0xa0>, unknown2)
+        (NCSDExtendedHeader, extended_header)
     );
 
     struct Tags : expected_size_tag<0x200> {};
