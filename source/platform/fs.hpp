@@ -43,6 +43,13 @@ enum class MediaType : uint8_t {
     GameCard = 2,
 };
 
+enum class SpecialContentType : uint8_t {
+    UpdateData        = 1,
+    Manual            = 2,
+    DownloadPlayChild = 3,
+    UpdateDataNew3DS  = 4,
+};
+
 struct ExtSaveDataInfo {
     MediaType media_type;
     uint8_t unknown[3];
@@ -340,9 +347,22 @@ using CreateExtSaveDataLegacy = IPC::IPCCommand<0x830>::add_uint32::add_uint64::
  */
 using DeleteExtSaveDataLegacy = IPC::IPCCommand<0x835>::add_uint32::add_uint32
                                    ::response;
+                                   
 
 using Unknown0x839 = IPC::IPCCommand<0x839>
                         ::response;
+                        
+/**
+ * Inputs:
+ * - Media type
+ * - Title ID
+ * - Special content type
+ *
+ * Outputs:
+ * - Special content index / partition index of special content
+ */
+using GetSpecialContentIndex = IPC::IPCCommand<0x83A>::add_uint32::add_uint64::add_uint32
+                                ::response::add_uint32;
 
 /**
  * Inputs:

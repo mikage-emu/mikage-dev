@@ -214,9 +214,10 @@ struct NsService : SessionToPort {
             auto description = fmt::format( "CardUpdateInitialize, shared_mem_size={:#x}", shared_mem_size);
             Session::OnRequest(hypervisor, thread, session, description);
             
-            // Disable card update process for 3DSX/CXI -> Gamecard adaptors
             auto gamecard = thread.GetOS().setup.gamecard.get();
-            if (gamecard && (dynamic_cast<Loader::GameCardFrom3DSX*>(gamecard) != nullptr || dynamic_cast<Loader::GameCardFromCXI*>(gamecard) != nullptr)) {
+            assert(gamecard);
+            // Disable card update process for 3DSX files, CXI files, and CCI images without an update partition
+            if (!gamecard->HasPartition(Loader::NCSDPartitionId::UpdateData)) {
                 thread.WriteTLS(0x80, 0xFFFE0000); // make NS think a bogus command is sent
                 
                 response.OnResponse([=](Hypervisor& hv, Thread& thread, Result result) {

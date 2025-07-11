@@ -1,8 +1,12 @@
 ﻿#include "fs.hpp"
+#include "framework/meta_tools.hpp"
 #include "fs_common.hpp"
 #include "fs_paths.hpp"
 
 #include <platform/file_formats/ncch.hpp>
+#include "loader/gamecard.hpp"
+#include "platform/fs.hpp"
+#include "platform/ipc.hpp"
 #include "platform/pxi.hpp"
 #include "platform/sm.hpp"
 #include "../os.hpp"
@@ -2112,24 +2116,62 @@ decltype(HLE::OS::ServiceHelper::SendReply) FakeFS::UserCommandHandler(FakeThrea
         break;
     }
 
-    case 0x83a: // GetSpecialContentIndex
+    case GetSpecialContentIndex::id:
     {
         auto media_type = MediaType { static_cast<uint8_t>(thread.ReadTLS(0x84)) };
-        auto content_type = thread.ReadTLS(0x90) & 0xff;
-        if (/*media_type == MediaType::GameCard*/ true) {
-            thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 2, 0).raw);
-            thread.WriteTLS(0x84, RESULT_OK);
-            if (content_type == 1) {
-                thread.WriteTLS(0x88, Meta::to_underlying(Loader::NCSDPartitionId::UpdateData));
-            } else if (content_type == 2) {
-                thread.WriteTLS(0x88, Meta::to_underlying(Loader::NCSDPartitionId::Manual));
-            } else if (content_type == 3) {
-                thread.WriteTLS(0x88, Meta::to_underlying(Loader::NCSDPartitionId::DownloadPlayChild));
+        auto content_type = SpecialContentType { static_cast<SpecialContentType>(thread.ReadTLS(0x90) & 0xff) };
+        if (media_type == MediaType::GameCard) {
+            Loader::NCSDPartitionId target_ncsd_id;
+            switch (content_type) {
+                case Platform::FS::SpecialContentType::UpdateData:
+                    target_ncsd_id = Loader::NCSDPartitionId::UpdateData;
+                    break;
+                case Platform::FS::SpecialContentType::Manual:
+                    target_ncsd_id = Loader::NCSDPartitionId::Manual;
+                    break;
+                case Platform::FS::SpecialContentType::DownloadPlayChild:
+                    target_ncsd_id = Loader::NCSDPartitionId::DownloadPlayChild;
+                    break;
+                case Platform::FS::SpecialContentType::UpdateDataNew3DS:
+                    target_ncsd_id = Loader::NCSDPartitionId::UpdateDataNew3DS;
+                    break;
+                default:
+                    throw Mikage::Exceptions::Invalid("GetSpecialContentType: Invalid special content type {:#x}", Meta::to_underlying(content_type));
+            }
+            
+            auto gamecard = thread.GetOS().setup.gamecard.get();
+            assert(gamecard);
+            thread.WriteTLS(0x80, GetSpecialContentIndex::response_header);
+            if (!gamecard->HasPartition(target_ncsd_id)) {
+                thread.WriteTLS(0x84, 0xC8804636); // "Special content not found"
+                // NOTE: this is required for the HOME Menu to properly show (or not show) the "Manual" button!
             } else {
-                throw Mikage::Exceptions::NotImplemented("GetSpecialContentIndex: Unknown content type {:#x}", content_type);
+                thread.WriteTLS(0x84, HLE::OS::RESULT_OK);
+                thread.WriteTLS(0x88, Meta::to_underlying(target_ncsd_id));
             }
         } else {
-            throw Mikage::Exceptions::NotImplemented("GetSpecialContentIndex: Only media type 2 supported");
+            // NOTE: FSPXI retrieves special content indices for installed titles from the title database
+            // TODO: properly reimplement this and check if the requested content actually exists
+            thread.WriteTLS(0x80, GetSpecialContentIndex::response_header);
+            uint32_t content_index{};
+            switch (content_type) {
+                case Platform::FS::SpecialContentType::UpdateData:
+                case Platform::FS::SpecialContentType::UpdateDataNew3DS:
+                    throw Mikage::Exceptions::Invalid("Attempted to get update partition index for non-gamecard title");
+                case Platform::FS::SpecialContentType::Manual:
+                    // NOTE: this may not always exist, but generally speaking, if it does, it will be content index 1
+                    content_index = 1;
+                    break;
+                case Platform::FS::SpecialContentType::DownloadPlayChild:
+                    // NOTE: this may not always exist, but generally speaking, if it does, it will be content index 2
+                    content_index = 2;
+                    break;
+                default:
+                    throw Mikage::Exceptions::Invalid("GetSpecialContentType: Invalid special content type {:#x}", Meta::to_underlying(content_type));
+            }
+            
+            thread.WriteTLS(0x84, HLE::OS::RESULT_OK);
+            thread.WriteTLS(0x88, content_index);
         }
         break;
     }
