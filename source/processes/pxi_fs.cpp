@@ -220,7 +220,7 @@ std::string PrintEntirePXIBuffer(Thread& thread, const PXIBuffer& buf, size_t si
 }
 
 
-void FileBufferInHostMemory::Write(char* source, uint32_t num_bytes) {
+void FileBufferInHostMemory::Write(const char* source, uint32_t num_bytes) {
     if (num_bytes > size) {
         throw std::runtime_error("Writing out of FileBuffer bounds");
     }
@@ -309,7 +309,7 @@ public:
 
     }
 
-    void Write(char* source, uint32_t num_bytes) override {
+    void Write(const char* source, uint32_t num_bytes) override {
         // TODO: Use a CryptoPP pipeline instead to avoid the heap allocation?
         std::vector<CryptoPP::byte> data(num_bytes);
         dec.ProcessData(data.data(), reinterpret_cast<const CryptoPP::byte*>(source), num_bytes);
@@ -457,8 +457,8 @@ std::cerr << "level3 offset: 0x" << std::hex << level3_offset << std::endl;*/
     }
 
     // Open the ExeFS section specified by the remainder of the file path
-    case 1:
-    case 2:
+    case 1: // exefs:/.code
+    case 2: // HOME Menu data (exefs:/{icon, banner, logo})
     {
         // Titles built for firmware 5.0.0 or newer don't store the logo in the
         // ExeFS but instead in the plaintext NCCH region.

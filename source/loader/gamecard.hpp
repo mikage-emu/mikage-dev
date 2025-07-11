@@ -1,5 +1,7 @@
 #pragma once
 
+#include "framework/settings.hpp"
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -22,7 +24,7 @@ enum class NCSDPartitionId {
     Executable        = 0,
     Manual            = 1,
     DownloadPlayChild = 2,
-    UpdateDataNew3D   = 6,
+    UpdateDataNew3DS  = 6,
     UpdateData        = 7
 };
 
@@ -35,6 +37,7 @@ public:
      * Return a pointer to a File from which the partition's NCCH data can be accessed, or std::nullopt if the partition doesn't exist.
      */
     virtual std::optional<std::unique_ptr<HLE::PXI::FS::File>> GetPartitionFromId(NCSDPartitionId id) = 0;
+    virtual bool HasPartition(NCSDPartitionId id) = 0;
 
     virtual ~GameCard();
 };
@@ -44,6 +47,7 @@ public:
  */
 class GameCardFromCXI final : public GameCard {
     std::optional<std::unique_ptr<HLE::PXI::FS::File>> GetPartitionFromId(NCSDPartitionId id) override;
+    bool HasPartition(NCSDPartitionId id) override;
 
     // Filename or file descriptor
     std::variant<std::string, int> source;
@@ -58,6 +62,7 @@ public:
 
 class GameCardFromCCI final : public GameCard {
     std::optional<std::unique_ptr<HLE::PXI::FS::File>> GetPartitionFromId(NCSDPartitionId id) override;
+    bool HasPartition(NCSDPartitionId id) override;
 
     // Filename or file descriptor
     std::variant<std::string, int> source;
@@ -74,14 +79,16 @@ public:
  * Utility to wrap a 3DSX file into a single-partition GameCard.
  */
 class GameCardFrom3DSX final : public GameCard {
+    Settings::Settings& settings;
     std::optional<std::unique_ptr<HLE::PXI::FS::File>> GetPartitionFromId(NCSDPartitionId id) override;
+    bool HasPartition(NCSDPartitionId id) override;
 
     // Filename or file descriptor
     std::variant<std::string, int> source;
 
 public:
-    GameCardFrom3DSX(std::string_view filename);
-    GameCardFrom3DSX(int file_descriptor);
+    GameCardFrom3DSX(std::string_view filename, Settings::Settings& settings);
+    GameCardFrom3DSX(int file_descriptor, Settings::Settings& settings);
 
     static bool IsLoadableFile(std::string_view filename);
     static bool IsLoadableFile(int file_descriptor);

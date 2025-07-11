@@ -24,6 +24,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <cstddef>
+
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 
@@ -671,8 +673,19 @@ static std::tuple<Result, uint32_t> AMHandleGetTitleList(FakeThread& thread, Con
             thread.GetOS().SVCBreak(thread, OSImpl::BreakReason::Panic);
 
         if (thread.GetOS().setup.gamecard) {
-            // TODO: Do we need to return any actual data for this?
-            output.Write<uint64_t>(thread, 0, 0);
+            auto&& ncch_partition = thread.GetOS().setup.gamecard->GetPartitionFromId(Loader::NCSDPartitionId::Executable);
+            assert(ncch_partition);
+            
+            auto& ncch_file = **ncch_partition;
+            FS::FileContext file_context { *thread.GetLogger() };
+            ncch_file.OpenReadOnly(file_context);
+            
+            uint64_t program_id = 0;
+         
+            auto [result, bytes_read] = ncch_file.Read(file_context, offsetof(FileFormat::NCCHHeader, program_id), sizeof(uint64_t), FS::FileBufferInHostMemory(&program_id, sizeof(uint64_t)));
+            assert(result == RESULT_OK && bytes_read == sizeof(uint64_t));
+            
+            output.Write<uint64_t>(thread, 0, program_id);
         }
         return std::make_tuple(RESULT_OK, uint32_t { thread.GetOS().setup.gamecard != nullptr });
     } else if (media_type == 1) {
