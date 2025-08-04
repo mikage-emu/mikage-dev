@@ -263,7 +263,8 @@ inline void Write(Pica::Context& context, u32 addr, const T data) {
                                                                             config.GetInputFormat().raw,
                                                                             config.GetPhysicalOutputAddress(),
                                                                             scaled_output_width, scaled_output_height, output_stride,
-                                                                            config.GetOutputFormat().raw);
+                                                                            config.GetOutputFormat().raw,
+                                                                            config.flip_data);
                 if (software_fallback) {
                     // Flush host GPU objects in the source memory range to
                     // emulated memory, and invalidate host GPU objects in
@@ -280,6 +281,8 @@ inline void Write(Pica::Context& context, u32 addr, const T data) {
                     }
 
                     for (u32 y = 0; y < scaled_output_height; ++y) {
+			u32 flipped_y = config.flip_data ? ((config.display_transfer.input_height - 1) - y) : y;
+                        
                         for (u32 x = 0; x < scaled_output_width; ++x) {
                             struct {
                                 int r, g, b, a;
@@ -288,7 +291,7 @@ inline void Write(Pica::Context& context, u32 addr, const T data) {
                             switch (ToGenericFormat(config.GetInputFormat())) {
                             case GenericImageFormat::RGBA8:
                             {
-                                PAddr pixel_addr = x * 4 * pixel_skip + y * pixel_skip_y * config.display_transfer.input_width * 4;
+                                PAddr pixel_addr = x * 4 * pixel_skip + flipped_y * pixel_skip_y * config.display_transfer.input_width * 4;
                                 source_color.r = Memory::Read<uint8_t>(source_memory, pixel_addr + 3); // red
                                 source_color.g = Memory::Read<uint8_t>(source_memory, pixel_addr + 2); // green
                                 source_color.b = Memory::Read<uint8_t>(source_memory, pixel_addr + 1); // blue
@@ -301,7 +304,7 @@ inline void Write(Pica::Context& context, u32 addr, const T data) {
 
                             case GenericImageFormat::RGB565:
                             {
-                                u16 srcval = Memory::Read<uint16_t>(source_memory, x * 2 * pixel_skip + y * pixel_skip_y * config.display_transfer.input_width * 2);
+                                u16 srcval = Memory::Read<uint16_t>(source_memory, x * 2 * pixel_skip + flipped_y * pixel_skip_y * config.display_transfer.input_width * 2);
                                 source_color.r = Color::Convert5To8((srcval >> 11) & 0x1F); // red
                                 source_color.g = Color::Convert6To8((srcval >>  5) & 0x3F); // green
                                 source_color.b = Color::Convert5To8( srcval        & 0x1F); // blue
@@ -311,7 +314,7 @@ inline void Write(Pica::Context& context, u32 addr, const T data) {
 
                             case GenericImageFormat::RGBA5551:
                             {
-                                u16 srcval = Memory::Read<uint16_t>(source_memory, x * 2 * pixel_skip + y * pixel_skip_y * config.display_transfer.input_width * 2);
+                                u16 srcval = Memory::Read<uint16_t>(source_memory, x * 2 * pixel_skip + flipped_y * pixel_skip_y * config.display_transfer.input_width * 2);
                                 source_color.r = Color::Convert5To8((srcval >> 11) & 0x1F); // red
                                 source_color.g = Color::Convert5To8((srcval >>  6) & 0x1F); // green
                                 source_color.b = Color::Convert5To8((srcval >>  1) & 0x1F); // blue
@@ -321,7 +324,7 @@ inline void Write(Pica::Context& context, u32 addr, const T data) {
 
                             case GenericImageFormat::RGBA4:
                             {
-                                u16 srcval = Memory::Read<uint16_t>(source_memory, x * 2 * pixel_skip + y * pixel_skip_y * config.display_transfer.input_width * 2);
+                                u16 srcval = Memory::Read<uint16_t>(source_memory, x * 2 * pixel_skip + flipped_y * pixel_skip_y * config.display_transfer.input_width * 2);
                                 source_color.r = Color::Convert4To8((srcval >> 12) & 0xF); // red
                                 source_color.g = Color::Convert4To8((srcval >>  8) & 0xF); // green
                                 source_color.b = Color::Convert4To8((srcval >>  4) & 0xF); // blue
