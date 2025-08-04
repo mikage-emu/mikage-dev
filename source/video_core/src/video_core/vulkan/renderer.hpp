@@ -5,6 +5,7 @@
 #include "awaitable.hpp"
 
 #include <vulkan_utils/memory_types.hpp>
+#include <optional>
 
 #include <vulkan/vulkan.hpp>
 
@@ -68,7 +69,7 @@ private:
 
     bool BlitImage(Context&, uint32_t /* TODO: PAddr */ input_addr, uint32_t input_width, uint32_t input_height, uint32_t input_stride,
                    uint32_t input_format, uint32_t output_addr, uint32_t output_width, uint32_t output_height, uint32_t output_stride,
-                   uint32_t output_format) override;
+                   uint32_t output_format, bool flip_y) override;
 
     std::shared_ptr<spdlog::logger> logger;
     Profiler::Profiler& profiler;
