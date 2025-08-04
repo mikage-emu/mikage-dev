@@ -30,7 +30,7 @@
 #include <range/v3/algorithm/copy_if.hpp>
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/algorithm/fill.hpp>
-#include <range/v3/algorithm/generate_n.hpp>>
+#include <range/v3/algorithm/generate_n.hpp>
 #include <range/v3/algorithm/move.hpp>
 #include <range/v3/algorithm/transform.hpp>
 #include <range/v3/iterator/insert_iterators.hpp>
@@ -1396,7 +1396,7 @@ void Renderer::FlushRange(PAddr start, uint32_t num_bytes) {
 }
 
 bool Renderer::BlitImage(Context& context, uint32_t /* TODO: PAddr */ input_addr, uint32_t input_width, uint32_t input_height, uint32_t input_stride, uint32_t input_format_raw,
-                         uint32_t output_addr, uint32_t output_width, uint32_t output_height, uint32_t output_stride, uint32_t output_format_raw, uint32_t flip_y) {
+                         uint32_t output_addr, uint32_t output_width, uint32_t output_height, uint32_t output_stride, uint32_t output_format_raw, bool flip_y) {
     if (output_addr == 0) {
         // TODO: Super Street Fighter 4 hits this, but it's likely a bug elsewhere
         return true;
@@ -1459,7 +1459,7 @@ bool Renderer::BlitImage(Context& context, uint32_t /* TODO: PAddr */ input_addr
         {
             // Validate that in each dimension, we're either copying 1:1 or scaling 2:1
             const auto copied_input_width = input_end_offset.x - input_start_offset.x;
-            const auto copied_input_height = flip_y ? (input_start_offset.y - input_end_offset.y) : (input_end_offset.y - input_start_offset.y);
+            const auto copied_input_height = std::abs(input_start_offset.y - input_end_offset.y);
             const auto copied_output_width = output_end_offset.x - output_start_offset.x;
             const auto copied_output_height = output_end_offset.y - output_start_offset.y;
             if ((copied_input_width != copied_output_width && copied_input_width != copied_output_width * 2) ||
