@@ -60,6 +60,8 @@ You'll need to `source conanrun.sh` to set up library directories.
 * Q key: L
 * E key: R
 * IJKL keys: D-pad
+* Enter key: START
+* Shift key: SELECT
 
 ## Debugging
 

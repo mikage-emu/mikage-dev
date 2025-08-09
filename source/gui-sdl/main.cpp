@@ -639,6 +639,11 @@ if (bootstrap_nand) // Experimental system bootstrapper
                     input.SetPressedStart(pressed);
                     break;
 
+                case SDLK_LSHIFT:
+                case SDLK_RSHIFT:
+                    input.SetPressetSelect(pressed);
+                    break;
+
                 case SDLK_a:
                     circle_pad.first -= 1.0f * (pressed ? 1.0 : -1.0);
                     input.SetCirclePad(circle_pad.first, circle_pad.second);
