@@ -1,3 +1,4 @@
+#define SDL_MAIN_HANDLED
 #include "audio_frontend_sdl.hpp"
 
 #include <ui/key_database.hpp>
@@ -167,22 +168,50 @@ int main(int argc, char* argv[]) {
 
         // Prefer XDG_DATA_DIRS, then /usr/local/share, then /usr/share
         auto xdg_data_dirs = getenv("XDG_DATA_DIRS");
-        auto data_dirs = std::string { (xdg_data_dirs && *xdg_data_dirs != 0) ? xdg_data_dirs : "/usr/local/share:/usr/share" };
-        for (auto data_dir : data_dirs | ranges::views::split(':')) {
-            auto candidate = ranges::to<std::string>(data_dir) + "/mikage";
+
+        #ifdef _WIN32
+            // On Windows, use the AppData/Roaming directory for the mikage folder
+            char* appdata = getenv("APPDATA");
+            if (!appdata) {
+                throw std::runtime_error("Could not determine APPDATA path. Please ensure the APPDATA environment variable is set.");
+            }
+            auto data_dirs = std::string { appdata } + "\\mikage";
+            if (!std::filesystem::exists(data_dirs)) {
+                std::filesystem::create_directories(data_dirs);
+            }
+        #else
+            auto data_dirs = std::string { (xdg_data_dirs && *xdg_data_dirs != 0) ? xdg_data_dirs : "/usr/local/share:/usr/share" };
+        #endif
+        std::cout << "Using data directory: " << data_dirs << std::endl;
+
+        #ifdef _WIN32
+            // On Windows, ensure paths use backslashes and check for the mikage folder directly
+            auto candidate = data_dirs;
             if (std::filesystem::exists(candidate)) {
                 settings.set<Settings::PathImmutableDataDir>(std::move(candidate));
-                break;
             }
-        }
+        #else
+            for (auto data_dir : data_dirs | ranges::views::split(':')) {
+                auto candidate = ranges::to<std::string>(data_dir) + "/mikage";
+                if (std::filesystem::exists(candidate)) {
+                    settings.set<Settings::PathImmutableDataDir>(std::move(candidate));
+                    break;
+                }
+            }
+        #endif
         if (!std::filesystem::exists(settings.get<Settings::PathImmutableDataDir>())) {
             throw std::runtime_error("Immutable data directory does not exist. Re-run the install step");
         }
 
         auto fill_home_path = [](std::string path) {
+        #ifdef _WIN32
+            // On Windows, use USERPROFILE instead of HOME
+            auto home_dir = getenv("USERPROFILE");
+        #else
             auto home_dir = getenv("HOME");
+        #endif
             if (!home_dir) {
-                throw std::runtime_error("Could not determine path to home directory. Please set the HOME environment variable");
+                throw std::runtime_error("Could not determine path to home directory. Please set the HOME or USERPROFILE environment variable");
             }
             if (!path.starts_with("/HOME~/")) {
                 return path;
@@ -232,7 +261,7 @@ int main(int argc, char* argv[]) {
     });
     auto frontend_logger = log_manager->RegisterLogger("FRONTEND");
 
-    auto keydb = LoadKeyDatabase(*frontend_logger, "./aes_keys.txt");
+    auto keydb = LoadKeyDatabase(*frontend_logger, "aes_keys.txt");
 
 if (bootstrap_nand) // Experimental system bootstrapper
     try {
