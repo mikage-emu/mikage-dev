@@ -324,6 +324,7 @@ auto ACICommandHandler(FakeThread& thread, FakeAC& context, const IPC::CommandHe
             thread.WriteTLS(0x8c, 0);
             break;
         }
+
         return ACUCommandHandler(thread, context, "ac:i", header);
     }
 

@@ -28,6 +28,7 @@
 #include "processes/pxi.hpp"
 #include "processes/pxi_fs.hpp"
 
+#include "processes/ac.hpp"
 #include "processes/act.hpp"
 #include "processes/am.hpp"
 #include "processes/cam.hpp"
@@ -6279,7 +6280,7 @@ void OS::Run(std::shared_ptr<Interpreter::Setup> setup) {
             hle_titles["fs"].create = FakeProcessFactoryFor<FakeFS>;
         }
 
-
+        hle_titles["ac"].create = FakeProcessFactoryFor<FakeAC>;
         hle_titles["act"].create = FakeProcessFactoryFor<FakeACT>;
         hle_titles["am"].create = FakeProcessFactoryFor<FakeAM>;
         hle_titles["cam"].create = FakeProcessFactoryFor<FakeCAM>;

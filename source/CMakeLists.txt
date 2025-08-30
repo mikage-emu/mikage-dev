@@ -26,6 +26,7 @@ target_sources(mikage PRIVATE
                loader/gamecard.cpp
                loader/host_file.cpp
                processes/ac_hpv.cpp
+               processes/ac.cpp
                processes/act.cpp
                processes/am.cpp
                processes/am_hpv.cpp
