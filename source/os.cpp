@@ -6290,7 +6290,7 @@ void OS::Run(std::shared_ptr<Interpreter::Setup> setup) {
         hle_titles["dlp"].create = FakeProcessFactoryFor<FakeDLP>;
         hle_titles["dsp"].create = FakeProcessFactoryFor<FakeDSP>;
         hle_titles["ErrDisp"].create = FakeProcessFactoryFor<FakeErrorDisp>;
-        hle_titles["friends"].create = FakeProcessFactoryFor<FakeFRIEND>;
+        // hle_titles["friends"].create = FakeProcessFactoryFor<FakeFRIEND>;
         hle_titles["gpio"].create = FakeProcessFactoryFor<FakeGPIO>;
         // hle_titles["http"].create = FakeProcessFactoryFor<FakeHTTP>; // TODO: HLE is a silent cause of hangs here. The event given to Initialize will be signaled to sent requests...
         hle_titles["i2c"].create = FakeProcessFactoryFor<FakeI2C>;
@@ -6300,14 +6300,15 @@ void OS::Run(std::shared_ptr<Interpreter::Setup> setup) {
         hle_titles["ndm"].create = FakeProcessFactoryFor<FakeNDM>;
         hle_titles["news"].create = FakeProcessFactoryFor<FakeNEWS>;
         hle_titles["nfc"].create = FakeProcessFactoryFor<DummyProcess>;
+//        hle_titles["nim"].create = FakeProcessFactoryFor<FakeNIM>;
         hle_titles["nwm"].create = FakeProcessFactoryFor<FakeNWM>;
         hle_titles["pdn"].create = FakeProcessFactoryFor<FakePDN>;
-        hle_titles["ps"].create = FakeProcessFactoryFor<FakePS>;
+//        hle_titles["ps"].create = FakeProcessFactoryFor<FakePS>;
         hle_titles["ptm"].create = FakeProcessFactoryFor<FakePTM>;
         hle_titles["pxi"].create = FakeProcessFactoryFor<PXI::FakePXI>;
         hle_titles["ro"].create = FakeProcessFactoryFor<DummyProcess>;
         hle_titles["socket"].create = FakeProcessFactoryFor<FakeSOC>;
-        hle_titles["ssl"].create = FakeProcessFactoryFor<FakeSSL>;
+        // hle_titles["ssl"].create = FakeProcessFactoryFor<FakeSSL>;
 
         auto process = MakeFakeProcess(*setup, "FakeBootThread");
         process->AttachThread(std::make_shared<BootThread>(*process));
