@@ -76,17 +76,17 @@ const std::unordered_map<uint64_t, HLETitle> hle_titles = {
     { 0x4013000001a02, { "dsp" } },
     { 0x4013000001b02, { "gpio" } },
 //    { 0x4013000001c02, { "gsp", { 0x4013000003502 } } }, // NEWS Hack
-    { 0x4013000001d02, { "hid" } },
+    { 0x4013000001d02, { "hid", { 0x4013000003202 } } },
     { 0x4013000001e02, { "i2c" } },
     { 0x4013000001f02, { "mcu", { 0x4013000001e02 } } },
     { 0x4013000002002, { "mic" } },
     { 0x4013000002102, { "pdn" } },
     { 0x4013000002202, { "ptm", { 0x4013000001e02, 0x4013000001f02, 0x4013000002102 } } },
-    { 0x4013000002402, { "ac", { 0x4013000002e02 } } },
+    { 0x4013000002402, { "ac", { 0x4013000002902 } } },
     { 0x4013000002602, { "cecd", { 0x4013000003202 } } },
     { 0x4013000002702, { "csnd" } },
     { 0x4013000002802, { "dlp" } },
-    { 0x4013000002902, { "http", { 0x4013000002e02 } } },
+    { 0x4013000002902, { "http", { 0x4013000002e02, 0x4013000002f02 } } },
     { 0x4013000002a02, { "mp" } },
     { 0x4013000002b02, { "ndm", { 0x4013000002402, 0x4013000003202, 0x4013000003402 } } },
     { 0x4013000002c02, { "nim", { 0x4013000002402 } } },
@@ -564,7 +564,7 @@ static std::tuple<Result> PSEncryptDecryptAES(  FakeThread& thread, Context&, ui
 }
 
 template<bool IsEncryption>
-struct CCMFor3DS : CryptoPP::CCM_Final<CryptoPP::AES, 12, IsEncryption> {
+struct CCMFor3DS : CryptoPP::CCM_Final<CryptoPP::AES, 16, IsEncryption> {
     void UncheckedSpecifyDataLengths(CryptoPP::lword header, CryptoPP::lword message, CryptoPP::lword footer) override {
         auto aligned_message = ((message + 15) / 16) * 16;
         CryptoPP::CCM_Base::UncheckedSpecifyDataLengths(header, aligned_message, footer);
