@@ -26,12 +26,19 @@ FakeMCU::FakeMCU(FakeThread& thread)
         thread.CallSVC(&OS::SVCBreak, OS::BreakReason::Panic);
     hid_event.second->name = "mcu::HIDEvent";
 
-    auto hid_thread = std::make_shared<WrappedFakeThread>(thread.GetParentProcess(),
-                                                          [this](FakeThread& thread) { return HIDThread(thread); });
-    hid_thread->name = "MCUHIDThread";
-    thread.GetParentProcess().AttachThread(hid_thread);
+    {
+        auto hid_thread = std::make_shared<WrappedFakeThread>(thread.GetParentProcess(),
+                                                              [this](FakeThread& thread) { return HIDThread(thread); });
+        hid_thread->name = "MCUHIDThread";
+        thread.GetParentProcess().AttachThread(hid_thread);
+    }
 
-    // TODO: Need mcu::PLS for ps LLE (the lack of that doesn't currently seem to block anything though)
+    {
+        auto pls_thread = std::make_shared<WrappedFakeThread>(thread.GetParentProcess(),
+                                                              [this](FakeThread& thread) { return PLSThread(thread); });
+        pls_thread->name = "MCUPLSThread";
+        thread.GetParentProcess().AttachThread(pls_thread);
+    }
 
     GPUThread(thread);
 }
@@ -117,6 +124,44 @@ void FakeMCU::HIDThread(FakeThread& thread) {
         }
     }
 }
+static auto PLSCommandHandler(FakeThread& thread, const IPC::CommandHeader& header, Handle /*signalled_handle*/) try {
+    switch (header.command_id) {
+    case 1: // GetDatetime
+        // Returns the I2C device 3 registers 0x30-0x36 converted to decimal
+        // TODO: What's the correct byte order?
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 3, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0);
+        thread.WriteTLS(0x8c, 0);
+        break;
+
+    case 9: // GetTickCounter (16 bit)
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 2, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0);
+        break;
+
+    default:
+        throw IPC::IPCError { header.raw, 0xdeadbeef };
+    }
+
+    return ServiceHelper::SendReply;
+} catch (const IPC::IPCError& err) {
+    throw std::runtime_error(fmt::format("Unknown mcu::PLS service command with header {:#010x}", err.header));
+}
+
+void FakeMCU::PLSThread(FakeThread& thread) {
+    ServiceHelper service;
+    service.Append(ServiceUtil::SetupService(thread, "mcu::PLS", 1));
+
+    auto InvokeCommandHandler = [&](FakeThread& thread, uint32_t signalled_handle_index) {
+        Platform::IPC::CommandHeader header = { thread.ReadTLS(0x80) };
+        return PLSCommandHandler(thread, header, service.handles[signalled_handle_index]);
+    };
+
+    service.Run(thread, std::move(InvokeCommandHandler));
+}
+
 
 template<typename Class, typename Func>
 static auto BindMemFn(Func f, Class* c) {
