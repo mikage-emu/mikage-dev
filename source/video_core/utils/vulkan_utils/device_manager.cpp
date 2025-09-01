@@ -15,6 +15,10 @@
 #include <iostream>
 #include <optional>
 
+#ifdef _WIN32
+#include <windows.h> // Required for GetModuleHandleA
+#endif
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 // TODO: Make runtime-configurable
@@ -51,6 +55,7 @@ VulkanInstanceManager::VulkanInstanceManager(spdlog::logger& logger, const char*
 }
 
 bool IsRenderDocActive() {
+    #ifndef _WIN32
     // Check if the RenderDoc shared library is loaded (note the use of RTLD_NOLOAD)
 
     auto renderdoc_so = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD);
@@ -63,6 +68,11 @@ bool IsRenderDocActive() {
         dlclose(renderdoc_so);
     }
     return is_active;
+    #else
+    // Check if the RenderDoc DLL is loaded on Windows
+    auto renderdoc_dll = GetModuleHandleA("renderdoc.dll");
+    return renderdoc_dll != nullptr;
+    #endif
 }
 
 VulkanDeviceManager::VulkanDeviceManager(VulkanInstanceManager& instance, spdlog::logger& logger, vk::SurfaceKHR surface, bool is_wayland) {

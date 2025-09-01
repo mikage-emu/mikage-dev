@@ -128,7 +128,7 @@ ValidatedHostPath PathValidator::ValidateAndGetSandboxedTreePath(const Utf8PathT
     sandbox_root = canonical(sandbox_root);
 
     auto new_path = sandbox_root;
-    new_path += utf8_path;
+    new_path += utf8_path.to_std_path();
     new_path = new_path.lexically_normal();
     auto new_path_str = new_path.string();
     if (ranges::begin(new_path_str) != ranges::search(new_path_str, sandbox_root.string()).begin()) {

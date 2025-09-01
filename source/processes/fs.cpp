@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 using namespace Platform::FS;
 
@@ -568,8 +569,8 @@ public:
 //            }
 //            strncpy(reinterpret_cast<char*>(out_entry.name_utf8), entry.path().filename().c_str(), sizeof(out_entry.name_utf8));
             // TODO: Properly encode as 8.3?
-            strncpy(reinterpret_cast<char*>(out_entry.short_name), entry.path().filename().c_str(), sizeof(out_entry.short_name));
-            strncpy(reinterpret_cast<char*>(out_entry.short_name_ext), entry.path().extension().c_str(), sizeof(out_entry.short_name_ext));
+            strncpy(reinterpret_cast<char*>(out_entry.short_name), entry.path().filename().string().c_str(), sizeof(out_entry.short_name));
+            strncpy(reinterpret_cast<char*>(out_entry.short_name_ext), entry.path().extension().string().c_str(), sizeof(out_entry.short_name_ext));
             // TODO: Short name + ext
 
             // Some 3DS homebrew applications expect this field to be set for
@@ -1389,9 +1390,9 @@ public:
         uint32_t program_id_high = (program_info.program_id >> 32);
         uint32_t program_id_low = (program_info.program_id & 0xFFFFFFFF);
         if (program_info.media_type == 1 /* SD */) {
-            return HostSdmcDirectory(context.settings) / fmt::format("Nintendo 3DS/{:016x}/{:016x}/title/{:08x}/{:08x}/data", GetId0(context), GetId1(context), program_id_high, program_id_low);
+            return (HostSdmcDirectory(context.settings) / fmt::format("Nintendo 3DS/{:016x}/{:016x}/title/{:08x}/{:08x}/data", GetId0(context), GetId1(context), program_id_high, program_id_low)).string();
         } else if (program_info.media_type == 2 /* Gamecard */) {
-            return GetRootDataDirectory(context.settings) / fmt::format("card_savedata/{:08x}/{:08x}/data", program_id_high, program_id_low);
+            return (GetRootDataDirectory(context.settings) / fmt::format("card_savedata/{:08x}/{:08x}/data", program_id_high, program_id_low)).string();
         } else {
             throw std::runtime_error("Unknown media type");
         }

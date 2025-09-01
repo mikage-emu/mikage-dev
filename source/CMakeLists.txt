@@ -101,3 +101,5 @@ target_link_libraries(mikage PRIVATE SDL2::SDL2)
 target_link_libraries(mikage PRIVATE spdlog::spdlog)
 target_link_libraries(mikage PRIVATE Tracy::TracyClient)
 
+target_link_libraries(mikage PRIVATE Ws2_32)
+target_link_libraries(mikage PRIVATE Mswsock)

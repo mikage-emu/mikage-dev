@@ -8,7 +8,7 @@ project(video_core LANGUAGES CXX)
 
 add_subdirectory(utils/vulkan_utils)
 
-add_library(video_core SHARED)
+add_library(video_core STATIC)
 
 target_sources(video_core PRIVATE
     src/core/hw/gpu.cpp
@@ -26,7 +26,8 @@ target_sources(video_core PRIVATE
     src/video_core/vulkan/pipeline_cache.cpp
     src/video_core/vulkan/renderer.cpp
     src/video_core/vulkan/resource_manager.cpp
-    src/video_core/vulkan/shader_gen.cpp)
+    src/video_core/vulkan/shader_gen.cpp
+    )
 if (PISTACHE_FOUND)
     target_sources(video_core PRIVATE src/debug/gpu.cpp)
 endif()
@@ -34,6 +35,8 @@ endif()
 
 target_include_directories(video_core PRIVATE src/support src/ externals/nihstro/include)
 target_include_directories(video_core PRIVATE ../)
+
+#target_link_libraries(video_core PRIVATE framework platform)
 # target_include_directories(video_core PRIVATE externals/vulkan-hpp/vulkan) TODO: Need to also include Vulkan headers with matching version... For now, I'm just using the headers shipping with my Linux distribution
 target_link_libraries(video_core PRIVATE vulkan-util)
 target_link_libraries(video_core PRIVATE Boost::boost)
