@@ -25,6 +25,8 @@ target_sources(mikage PRIVATE
                loader/firm.cpp
                loader/gamecard.cpp
                loader/host_file.cpp
+               processes/ac_hpv.cpp
+               processes/ac.cpp
                processes/act.cpp
                processes/am.cpp
                processes/am_hpv.cpp
@@ -62,6 +64,8 @@ target_sources(mikage PRIVATE
                processes/pxi_fs_host_file.cpp
                processes/ro_hpv.cpp
                processes/sm_hpv.cpp
+               processes/soc.cpp
+               processes/soc_hpv.cpp
                processes/ssl.cpp
                ui/installer.cpp
                ui/key_database.cpp

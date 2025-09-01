@@ -232,6 +232,29 @@ namespace PS {
 using VerifyRsaSha256 = IPC::IPCCommand<0x3>::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32
                                             ::add_uint32::add_uint32::add_pxi_buffer::add_pxi_buffer::response;
 
+/**
+ * Inputs:
+ * - Data size (in bytes)
+ * - Initialization vector for AES (4 words)
+ * - Operation (upper bytes ignored):
+ *   0/1=CBC encrypt/decrypt, 2/3=CTR encrypt/decrypt, 4/5=CCM encrypt/decrypt (not supported?)
+ * - Key id (PXI-specific, maps to hardware keyslots using an irregular pattern)
+ * - input data
+ * - output buffer
+ */
+using EncryptDecryptAES = IPC::IPCCommand<0x4>::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_pxi_buffer::add_pxi_buffer
+                                              ::response;
+
+using EncryptSignDecryptVerifyAesCcm = IPC::IPCCommand<0x5>::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_uint32::add_pxi_buffer_r::add_pxi_buffer::response;
+
+/**
+ * Inputs:
+ * - buffer size (in bytes)
+ * - Output buffer
+ */
+using GenerateRandomBytes = IPC::IPCCommand<0xd>::add_uint32::add_pxi_buffer
+                                                ::response;
+
 } // namespace PS
 
 namespace MC {

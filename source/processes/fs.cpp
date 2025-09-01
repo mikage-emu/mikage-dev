@@ -2099,6 +2099,16 @@ decltype(HLE::OS::ServiceHelper::SendReply) FakeFS::UserCommandHandler(FakeThrea
         thread.WriteTLS(0x88, (thread.GetOS().setup.gamecard != nullptr)); // True if game card inserted
         break;
 
+    case 0x82E: // GetProductInfo
+        thread.WriteTLS(0x80, IPC::CommandHeader::Make(0, 6, 0).raw);
+        thread.WriteTLS(0x84, RESULT_OK);
+        thread.WriteTLS(0x88, 0x31313131);
+        thread.WriteTLS(0x8C, 0x31313131);
+        thread.WriteTLS(0x90, 0x31313131);
+        thread.WriteTLS(0x94, 0x31313131);
+        thread.WriteTLS(0x98, 0x32323232);
+        break;
+
     case CreateExtSaveDataLegacy::id:
     {
         IPC::HandleIPCCommand<CreateExtSaveDataLegacy>(BindMemFn(&FakeFS::HandleCreateExtSaveDataLegacy, this), thread, thread, session_pid);

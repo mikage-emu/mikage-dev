@@ -489,6 +489,13 @@ DecodedThumbInstr DecodeThumb(ARM::ThumbInstr instr) {
                         | ((uint32_t { instr.raw } & 0x100) << 6) // bit8 denotes whether to push LR
                         | instr.register_list;
         return { arm_instr };
+    } else if (instr.opcode_upper10 == 0b1011101001) {
+        // REV16
+        ARM::ARMInstr arm_instr;
+        arm_instr.raw = 0b1110'0110'1011'1111'0000'1111'1011'0000ul
+                        | (uint32_t { instr.idx_rd_low } << 12)
+                        | instr.idx_rm;
+        return { arm_instr };
     } else {
         // Instruction has no ARM equivalent, let the caller handle it manually
         return { };

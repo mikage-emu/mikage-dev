@@ -22,6 +22,7 @@ public:
 
     void GPUThread(FakeThread& thread);
     void HIDThread(FakeThread& thread);
+    void PLSThread(FakeThread& thread);
 
     void GPUCommandHandler(FakeThread& thread, Handle sender, const IPC::CommandHeader& header);
     void HIDCommandHandler(FakeThread& thread, Handle sender, const IPC::CommandHeader& header);
